@@ -1,0 +1,2477 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SalesGlobe — Comp Cost Estimator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --sg-navy:      #16213F;
+  --sg-darkblue:  #27394F;
+  --sg-blue:      #205D92;
+  --sg-teal:      #4C9A9C;
+  --sg-yellow:    #F4D58D;
+  --sg-darkred:   #8D0801;
+  --sg-grey:      #857874;
+  --sg-lightgrey: #F5F4F3;
+  --sg-black:     #000000;
+  --sg-white:     #FFFFFF;
+  --sg-pagebg:    #EDEAE8;
+}
+
+body{font-family:'Calibri','Calibri Light',sans-serif;background:var(--sg-pagebg);color:var(--sg-black);font-size:14px;line-height:1.5}
+
+/* ── SalesGlobe Header ── */
+.sg-header{background:var(--sg-navy);padding:12px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:200;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.sg-logo{height:28px;width:auto;filter:brightness(0) invert(1)}
+.sg-header-title{flex:1}
+.sg-header-appname{color:var(--sg-white);font-size:18px;font-weight:700;font-family:'Calibri',sans-serif;letter-spacing:0.02em}
+.sg-header-method{margin-left:auto;flex-shrink:0}
+
+/* ── Method Toggle ── */
+.method-toggle{display:flex;border:2px solid rgba(255,255,255,0.5);border-radius:20px;overflow:hidden}
+.method-btn{background:transparent;color:rgba(255,255,255,0.75);border:none;padding:5px 16px;font-family:'Calibri',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s}
+.method-btn.active{background:var(--sg-white);color:var(--sg-navy)}
+.mc-badge{background:rgba(255,255,255,0.25);color:white;font-size:9px;font-weight:800;padding:1px 5px;border-radius:4px;margin-left:4px;letter-spacing:0.05em}
+
+/* ── Models Toolbar ── */
+.models-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 24px;background:var(--sg-white);border-bottom:1px solid #ddd;gap:12px;flex-wrap:wrap}
+.models-saved{display:flex;align-items:center;gap:8px}
+.models-saved select{font-family:'Calibri',sans-serif;font-size:13px;border:1px solid #ccc;border-radius:4px;padding:5px 10px;color:var(--sg-black);min-width:200px}
+.models-actions{display:flex;align-items:center;gap:8px}
+
+/* ── Layout ── */
+.app-layout{display:flex;flex-direction:column;gap:16px;padding:16px;max-width:1400px;margin:0 auto}
+#output-section{display:flex;flex-direction:column;gap:12px}
+#roles-section{display:flex;flex-direction:column;gap:10px}
+
+/* ── Cards ── */
+.card{background:var(--sg-white);border:1.5px solid #ddd;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.07);margin-bottom:14px;overflow:hidden}
+.card-head{padding:12px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px}
+.card-title{font-weight:700;font-size:13px;color:var(--sg-darkblue);flex:1}
+.card-body{padding:14px 16px}
+
+/* ── Role cards ── */
+.role-card{background:var(--sg-white);border:1.5px solid #ddd;border-left:4px solid var(--role-primary,var(--sg-navy));border-radius:6px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.07)}
+.role-header{background:var(--sg-lightgrey);border-bottom:2px solid var(--role-primary,var(--sg-navy));padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;cursor:pointer}
+.role-header:hover{background:#e8e5e3}
+.role-color-swatch{width:14px;height:14px;border-radius:50%;border:2px solid rgba(0,0,0,0.15);flex-shrink:0}
+.rh-inputs{display:flex;align-items:center;gap:6px;flex:1;flex-wrap:wrap}
+.rh-inputs input{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;font-family:'Calibri',sans-serif;color:var(--sg-black);outline:none;background:white;transition:border-color 0.15s}
+.rh-inputs input:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+.rh-inputs input[data-f=name]{width:140px;font-weight:700}
+.rh-inputs input[data-f=hc]{width:64px}
+.rh-inputs input[data-f=base]{width:96px}
+.rh-inputs input[data-f=ti]{width:96px}
+.rh-label{font-size:12px;font-weight:700;color:var(--sg-grey);text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
+.rh-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.role-body{overflow:hidden}
+
+/* ── Attrition / Ramp — inline in role header ── */
+.rh-inputs input[data-f=attr]{width:50px}
+.rh-inputs input[data-f=ramp]{width:46px}
+.rh-sep{width:1px;height:18px;background:#ccc;flex-shrink:0}
+.adjust-hint{font-size:10px;color:var(--sg-grey);font-style:italic;white-space:nowrap}
+
+/* ── Metric rows ── */
+.metric-row{display:grid;grid-template-columns:268px 1fr;gap:12px;padding:10px 14px;border-bottom:1px solid #eee;align-items:start}
+.metric-row:last-child{border-bottom:none}
+.metric-params{display:flex;flex-direction:column;gap:3px;background:var(--sg-white)}
+.metric-name-row{display:flex;align-items:center;gap:5px}
+.metric-name-row input[type=text]{width:100px;flex:0 1 100px;padding:4px 6px;border:1px solid #ccc;border-radius:4px;font-size:12px;font-weight:700;font-family:'Calibri',sans-serif;color:var(--sg-black);outline:none;transition:border-color 0.15s;background:white}
+.metric-weight-input{width:42px;flex-shrink:0;padding:2px 4px;font-size:12px;border:1px solid #ccc;border-radius:4px;text-align:right;font-family:'Calibri',sans-serif;color:var(--sg-black);outline:none;background:white;transition:border-color 0.15s}
+.metric-weight-input:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+.metric-name-row input[type=text]:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+.metric-weight-badge{font-size:11px;color:var(--sg-grey);background:var(--sg-lightgrey);padding:2px 7px;border-radius:10px;white-space:nowrap}
+
+/* ── Chart Area (sliding panel layout) ── */
+.metric-chart-area{display:flex;overflow:hidden;height:var(--chart-h,400px);border-radius:4px}
+.chart-canvas-panel{flex:1;min-width:0;position:relative;transition:flex 0.3s ease}
+.chart-canvas-panel canvas{width:100%!important;height:100%!important}
+.chart-side-panel{width:0;overflow:hidden;transition:width 0.3s ease;flex-shrink:0;background:var(--sg-lightgrey)}
+.chart-side-panel.open{width:300px;border-left:1px solid #ddd}
+.side-panel-inner{width:300px;height:100%;overflow-y:auto;padding:10px 12px;box-sizing:border-box}
+
+/* ── Panel Buttons ── */
+.metric-panel-buttons{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+.panel-toggle-btn{font-family:'Calibri',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;border:1.5px solid var(--sg-grey);background:transparent;color:var(--sg-grey);cursor:pointer;transition:all 0.15s}
+.panel-toggle-btn:hover:not(:disabled){border-color:var(--role-primary,var(--sg-blue));color:var(--role-primary,var(--sg-blue))}
+.panel-toggle-btn.active{background:var(--role-primary,var(--sg-blue));border-color:var(--role-primary,var(--sg-blue));color:var(--sg-white)}
+.panel-toggle-btn:disabled{opacity:0.35;cursor:not-allowed}
+
+/* ── Panel Content ── */
+.panel-title{font-family:'Calibri',sans-serif;font-size:13px;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.04em}
+.panel-table{width:100%;border-collapse:collapse;font-family:'Calibri',sans-serif;font-size:11px}
+.panel-table th{color:var(--sg-white);font-weight:700;padding:5px 8px;text-align:center}
+.panel-table td{padding:4px 8px;border-bottom:1px solid #eee;text-align:center;color:var(--sg-black)}
+.panel-table tr:hover td{background:rgba(0,0,0,0.03)}
+.sensitivity-panel-table th,.sensitivity-panel-table td{padding:3px 4px;font-size:11px}
+
+/* ── Form inputs ── */
+.fg{margin-bottom:0}
+.fg label{display:flex;flex-direction:column;gap:3px;font-size:13px;font-weight:600;font-family:'Calibri',sans-serif;color:var(--sg-grey);text-transform:uppercase;letter-spacing:0.04em}
+.fg input[type=number],.fg input[type=text],.fg select{width:100%;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;font-family:'Calibri',sans-serif;color:var(--sg-black);outline:none;transition:border-color 0.15s;background:white}
+.fg input[type=number]:focus,.fg input[type=text]:focus,.fg select:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+.inp-wrap{position:relative}
+.inp-pre{position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--sg-grey);font-size:12px;pointer-events:none;z-index:1}
+.inp-wrap input{padding-left:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.param-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.param-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+
+/* ── Buttons ── */
+.btn-primary{background:var(--sg-blue);color:var(--sg-white);border:none;border-radius:4px;padding:7px 16px;font-family:'Calibri',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:background 0.15s}
+.btn-primary:hover{background:var(--sg-navy)}
+.btn-secondary{background:transparent;color:var(--sg-darkblue);border:1.5px solid var(--sg-darkblue);border-radius:4px;padding:5px 12px;font-family:'Calibri',sans-serif;font-weight:600;font-size:12px;cursor:pointer;transition:all 0.12s;display:inline-flex;align-items:center;gap:5px}
+.btn-secondary:hover{background:var(--sg-lightgrey)}
+.btn-danger{background:transparent;color:var(--sg-grey);border:none;font-size:14px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:'Calibri',sans-serif}
+.btn-danger:hover{color:var(--sg-darkred);background:#f9f0f0}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:4px}
+.add-role{width:100%;padding:10px;border:2px dashed #ccc;border-radius:6px;background:transparent;color:var(--sg-grey);font-size:12px;font-weight:600;font-family:'Calibri',sans-serif;cursor:pointer;transition:all 0.15s;margin-top:2px}
+.add-role:hover{border-color:var(--sg-blue);color:var(--sg-blue);background:rgba(32,93,146,0.06)}
+
+/* ── Summary stats ── */
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:700px){.summary-row{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--sg-white);border:1.5px solid #e8e6e4;border-top:4px solid var(--sg-navy);border-radius:8px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.stat-lbl{font-size:11px;font-weight:600;font-family:'Calibri',sans-serif;color:var(--sg-grey);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.stat-val{font-size:28px;font-weight:700;color:var(--sg-navy);letter-spacing:-0.02em}
+.stat-sub{font-size:11px;color:var(--sg-grey);margin-top:2px}
+/* Adjusted cost cards — muted teal top border */
+.stat.stat-adj{border-top-color:var(--sg-teal)}
+.stat.stat-delta .stat-val{color:var(--sg-darkred)}
+
+/* ── Adjusted summary row ── */
+#adj-summary-row{display:none;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+#adj-summary-row.visible{display:grid}
+@media(max-width:700px){#adj-summary-row{grid-template-columns:1fr 1fr}}
+
+/* ── Results table ── */
+.rtable{width:100%;border-collapse:collapse;font-size:12px}
+.rtable th{background:var(--sg-navy);padding:8px 12px;font-size:12px;font-weight:700;font-family:'Calibri',sans-serif;color:var(--sg-white);text-align:right;white-space:nowrap;text-transform:uppercase;letter-spacing:0.04em}
+.rtable th:first-child{text-align:left}
+.rtable td{padding:7px 12px;text-align:right;border-bottom:1px solid #eee;font-variant-numeric:tabular-nums;font-family:'Calibri',sans-serif;font-size:13px}
+.rtable td:first-child{text-align:left}
+.rtable tr:nth-child(even) td{background:var(--sg-lightgrey)}
+.rtable tr:hover td{background:rgba(32,93,146,0.05)}
+.rtable .total-row td{font-weight:700;border-top:2px solid #ddd;background:var(--sg-lightgrey)}
+.rtable td.role-hd-cell{color:var(--sg-white)!important;font-weight:700;padding-left:10px}
+.rtable td.adj-delta-cell{color:var(--sg-darkred);font-style:italic}
+
+/* ── MC percentile table ── */
+.pct-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;font-family:'Calibri',sans-serif}
+.pct-tbl th,.pct-tbl td{padding:7px 12px;text-align:center;border:1px solid #eee}
+.pct-tbl th{background:var(--sg-navy);color:var(--sg-white);font-size:12px;font-weight:700;text-transform:uppercase}
+.pct-tbl .p50{background:rgba(32,93,146,0.1);font-weight:800;color:var(--sg-blue)}
+
+/* ── Heat map cells ── */
+.c-green{background:#dcfce7;color:#166534;font-weight:600}
+.c-lime{background:#d9f99d;color:#365314}
+.c-yellow{background:#fef3c7;color:#92400e}
+.c-orange{background:#fed7aa;color:#9a3412}
+.c-red{background:#fee2e2;color:#991b1b;font-weight:700}
+.c-dark{background:#fca5a5;color:#7f1d1d;font-weight:800}
+.base-case{outline:3px solid var(--sg-navy);outline-offset:-3px;font-weight:800}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal-box{background:var(--sg-white);border-radius:8px;padding:24px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.modal-box h3{margin:0 0 12px 0;font-size:16px;font-weight:700;color:var(--sg-navy);font-family:'Calibri',sans-serif}
+.modal-box input[type=text]{width:100%;padding:8px 10px;font-size:14px;font-family:'Calibri',sans-serif;border:1px solid #ccc;border-radius:4px;outline:none;margin-bottom:12px}
+.modal-box input[type=text]:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+
+/* ── Visibility ── */
+.mc-only{display:none}
+.auc-only{display:block}
+body.mc-mode .mc-only{display:block}
+body.mc-mode .auc-only{display:none}
+
+/* ── Plan B Controls ── */
+.planb-divider{font-size:13px;font-weight:700;color:var(--sg-grey);padding:0 4px;align-self:center}
+.planb-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.planb-controls select{font-family:'Calibri',sans-serif;font-size:13px;border:1px solid #ccc;border-radius:4px;padding:5px 10px;color:var(--sg-black);min-width:180px}
+.planb-badge{font-size:11px;font-weight:600;color:var(--sg-navy);background:rgba(22,33,63,0.08);border-radius:10px;padding:3px 10px}
+.planb-method-wrap{display:flex;border:1.5px solid #ccc;border-radius:14px;overflow:hidden;flex-shrink:0}
+.planb-method-btn{background:transparent;color:var(--sg-grey);border:none;padding:3px 12px;font-family:'Calibri',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:background 0.15s}
+.planb-method-btn.active{background:var(--sg-navy);color:white}
+
+/* ── Compare Section ── */
+.section-header{font-size:13px;font-weight:700;color:var(--sg-darkblue);padding:10px 14px;background:var(--sg-lightgrey);border:1.5px solid #ddd;border-radius:6px 6px 0 0;border-bottom:none;text-transform:uppercase;letter-spacing:0.04em}
+/* ── Collapsible cards ── */
+.card-head{cursor:pointer;user-select:none}
+.card-chevron{font-size:10px;color:var(--sg-grey);float:right;transition:transform 0.2s;display:inline-block;margin-top:3px}
+.card.collapsed .card-chevron{transform:rotate(-90deg)}
+.card.collapsed>*:not(.card-head){display:none!important}
+/* ── Role table section rows ── */
+.role-section-hdr td{padding:7px 12px;font-weight:700;font-size:13px;cursor:pointer;color:white;letter-spacing:0.01em}
+.role-section-chevron{float:right;font-size:10px;transition:transform 0.2s;display:inline-block;margin-top:1px}
+.role-section-hdr.collapsed .role-section-chevron{transform:rotate(-90deg)}
+.role-total-row td{font-weight:600;background:rgba(22,33,63,0.05);border-top:1.5px solid #ddd}
+/* ── Compare collapsible ── */
+.section-header{cursor:pointer;user-select:none}
+.section-collapse-chevron{float:right;font-size:10px;color:var(--sg-grey);transition:transform 0.2s;display:inline-block}
+#compare-body.hidden{display:none}
+#compare-section{margin-bottom:12px}
+#compare-section .rtable{border-radius:0 0 6px 6px;border:1.5px solid #ddd}
+.compare-delta-pos{color:var(--sg-darkred);font-weight:600}
+.compare-delta-neg{color:var(--sg-teal);font-weight:600}
+.compare-delta-zero{color:var(--sg-grey)}
+.compare-metric-row td{font-size:11px;color:#555;background:#FAFAFA;border-bottom:1px solid #EFEFEF}
+.compare-metric-name{padding-left:20px;font-style:italic;color:#444}
+
+/* ── Misc ── */
+.info-pill{background:rgba(32,93,146,0.06);border:1px solid rgba(32,93,146,0.25);border-radius:4px;padding:12px 16px;font-size:22px;font-family:'Calibri',sans-serif;color:var(--sg-darkblue);margin-bottom:10px;line-height:1.5}
+.role-sel{padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:12px;font-family:'Calibri',sans-serif;background:white;color:var(--sg-darkblue)}
+.loading{opacity:0.5;pointer-events:none}
+
+/* ── V2: Ground-level method toggle ── */
+.global-inputs-row{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.fg-label{display:block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--sg-grey);margin-bottom:1px}
+.fg-group{display:flex;gap:12px;align-items:flex-end}
+.method-section{display:flex;flex-direction:column}
+.method-toggle-wrap{display:inline-flex;align-items:center;gap:6px;position:relative}
+.method-toggle-ground{display:inline-flex;border:2px solid var(--sg-navy);border-radius:20px;overflow:hidden}
+.method-btn-g{background:transparent;color:var(--sg-navy);border:none;padding:5px 16px;font-family:'Calibri',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s}
+.method-btn-g.active{background:var(--sg-navy);color:white}
+.method-btn-g:hover:not(.active){background:rgba(22,33,63,0.08)}
+.info-icon-btn{background:none;border:none;color:var(--sg-grey);font-size:15px;cursor:pointer;padding:2px 4px;line-height:1;transition:color 0.15s}
+.info-icon-btn:hover{color:var(--sg-navy)}
+.method-tooltip{display:none;position:absolute;top:calc(100% + 8px);left:0;width:320px;background:var(--sg-white);color:var(--sg-darkblue);font-size:12px;line-height:1.5;padding:10px 14px;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.15);border:1px solid #ddd;z-index:200;white-space:normal}
+.method-tooltip.visible{display:block}
+
+/* ── V2: Detail toggle button ── */
+.detail-toggle{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.85);font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;cursor:pointer;font-family:'Calibri',sans-serif;transition:all 0.15s;margin-right:4px}
+.detail-toggle:hover{background:rgba(255,255,255,0.28);color:white}
+
+/* ── V2: Sliders ── */
+.slider-fg{margin-bottom:0}
+.slider-pair{display:flex;align-items:center;gap:6px;margin-top:1px}
+.param-slider{flex:1 1 0;min-width:0;height:4px;accent-color:var(--role-primary,var(--sg-navy));cursor:pointer}
+.param-num{flex:0 0 58px;width:58px!important;text-align:right;padding:2px 4px;font-size:12px;font-family:'Calibri',sans-serif;border:1px solid #ccc;border-radius:4px;outline:none;transition:border-color 0.15s;box-sizing:border-box}
+.param-num:focus{border-color:var(--sg-blue);box-shadow:0 0 0 2px rgba(32,93,146,0.18)}
+
+/* ── V2: CoS legend ── */
+.cos-legend{font-size:11px;color:var(--sg-grey);padding:6px 12px 8px;text-align:right;font-family:'Calibri',sans-serif}
+
+/* ── V2: Executive Summary ── */
+#exec-summary-card{border-top:4px solid var(--sg-teal)}
+.exec-narrative{font-size:14px;line-height:1.75;color:var(--sg-darkblue);margin:0;padding:2px 0}
+.exec-narrative strong{color:var(--sg-navy)}
+.exec-narrative em{font-style:italic;color:var(--sg-grey)}
+
+/* ── V2: mc-only group ── */
+body.mc-mode .fg-group.mc-only{display:flex!important}
+
+/* (kpi-chips styles moved to floating-actions block below) */
+.kpi-chip{display:inline-flex;flex-direction:column;align-items:center;background:rgba(255,255,255,0.88);backdrop-filter:blur(2px);border:1px solid rgba(200,196,192,0.7);border-radius:6px;padding:3px 10px;min-width:72px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.kpi-chip-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--sg-grey);font-family:'Calibri',sans-serif}
+.kpi-chip-value{font-size:13px;font-weight:700;color:var(--sg-navy);font-family:'Calibri',sans-serif}
+.kpi-chip-delta{font-size:10px;font-weight:600;margin-top:1px;font-family:'Calibri',sans-serif}
+.kpi-delta-pos{color:var(--sg-darkred)}
+.kpi-delta-neg{color:var(--sg-teal)}
+
+/* ── Floating action bar (fixed bottom-right) ── */
+.floating-actions{position:fixed;bottom:22px;right:22px;z-index:500;display:flex;flex-direction:column;align-items:flex-end;gap:7px}
+.float-pill{display:inline-flex;align-items:center;gap:6px;background:var(--sg-navy);color:var(--sg-white);border:none;border-radius:20px;padding:8px 16px;font-size:12px;font-weight:700;font-family:'Calibri',sans-serif;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,0.25);transition:background 0.15s,transform 0.1s;white-space:nowrap}
+.float-pill:hover{background:var(--sg-darkblue);transform:translateY(-1px)}
+.float-pill.float-secondary{background:var(--sg-teal)}
+.float-pill.float-secondary:hover{background:#3a8486}
+.float-pill-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(76,154,156,0.15);color:var(--sg-navy);border:1.5px solid rgba(76,154,156,0.4);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;font-family:'Calibri',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,0.1);white-space:nowrap}
+.float-pill-clear{background:none;border:none;cursor:pointer;color:var(--sg-grey);font-size:13px;padding:0 2px;line-height:1;font-family:'Calibri',sans-serif}
+.float-pill-clear:hover{color:var(--sg-darkred)}
+
+/* ── Camera flash overlay ── */
+#flash-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:white;opacity:0;pointer-events:none;z-index:9999}
+
+/* ── KPI chips overlaid on chart (top-left corner) ── */
+.metric-kpi-chips{position:absolute;top:8px;left:8px;z-index:10;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-start;max-width:320px}
+</style>
+</head>
+<body>
+
+<!-- Flash overlay for freeze snapshot -->
+<div id="flash-overlay"></div>
+
+<!-- Floating action bar -->
+<div class="floating-actions" id="floating-actions">
+  <div id="float-snapshot-badge" class="float-pill-badge" style="display:none">
+    <span id="float-snapshot-text"></span>
+    <button class="float-pill-clear" onclick="clearSnapshot()" title="Clear snapshot">&#x2715;</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="float-pill float-secondary mc-only" id="float-rerun" onclick="rerunMC()" style="display:none">&#x21BA; Re-run MC</button>
+    <button class="float-pill" id="float-freeze" onclick="freezeSnapshot()">&#x2744; Freeze Snapshot</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="sg-header">
+  <img src="sg-logo.png" alt="SalesGlobe" class="sg-logo">
+  <div class="sg-header-title">
+    <span class="sg-header-appname">Sales Compensation Cost Estimator</span>
+  </div>
+</header>
+
+<!-- MODELS TOOLBAR -->
+<div class="models-toolbar">
+  <div class="models-saved">
+    <select id="saved-models-select"><option value="">— Saved Models —</option></select>
+    <button class="btn-secondary" onclick="loadSelectedModel()">Load</button>
+    <button class="btn-danger" onclick="deleteSelectedModel()">Delete</button>
+  </div>
+  <div class="models-actions">
+    <button class="btn-secondary" onclick="openSaveDialog()">💾 Save Model</button>
+    <button class="btn-secondary" onclick="exportModelJSON()">⬇ Export JSON</button>
+    <label class="btn-secondary" style="cursor:pointer">⬆ Import JSON
+      <input type="file" accept=".json" style="display:none" onchange="importModelJSON(event)">
+    </label>
+    <button class="btn-secondary" onclick="exportToPPTX()">📊 Export to PowerPoint</button>
+  </div>
+  <div class="planb-divider">vs.</div>
+  <div class="planb-controls" id="planb-controls">
+    <select id="planb-select"><option value="">— Compare Plan B —</option></select>
+    <button class="btn-secondary" onclick="loadPlanB()">Load</button>
+    <button class="btn-danger" onclick="clearPlanB()" id="planb-clear" style="display:none">✕ Clear</button>
+    <span id="planb-badge" class="planb-badge" style="display:none"></span>
+    <div id="planb-method-wrap" class="planb-method-wrap" style="display:none" title="Plan B calculation method">
+      <button class="planb-method-btn active" id="planb-btn-auc" onclick="setPlanBMethod('auc')">AUC</button>
+      <button class="planb-method-btn" id="planb-btn-mc" onclick="setPlanBMethod('mc')">MC</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-layout">
+  <div id="output-section">
+
+    <!-- Executive Summary -->
+    <div class="card" id="exec-summary-card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-title">📋 Executive Summary</span>
+        <span class="card-chevron">▼</span>
+      </div>
+      <div class="card-body" id="exec-summary-body">
+        <p class="exec-narrative" style="color:var(--sg-grey);font-style:italic">Configure roles and revenue to generate summary.</p>
+      </div>
+    </div>
+
+    <!-- Global settings -->
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)"><span class="card-title">📊 Global Settings</span><span class="card-chevron">▼</span></div>
+      <div class="card-body">
+        <div class="global-inputs-row">
+          <div class="fg">
+            <label class="fg-label">Expected Revenue ($M)</label>
+            <div class="inp-wrap">
+              <span class="inp-pre">$</span>
+              <input type="number" id="g-rev" value="100" min="1" step="1" oninput="updateGlobal()">
+            </div>
+          </div>
+          <div class="method-section">
+            <label class="fg-label">Calculation Method</label>
+            <div class="method-toggle-wrap">
+              <div class="method-toggle-ground">
+                <button class="method-btn-g active" id="btn-auc-g" onclick="setMethod('auc')">AUC</button>
+                <button class="method-btn-g" id="btn-mc-g" onclick="setMethod('mc')">Monte Carlo β</button>
+              </div>
+              <button class="info-icon-btn" tabindex="0"
+                      onclick="this.nextElementSibling.classList.toggle('visible')"
+                      onblur="setTimeout(()=>this.nextElementSibling.classList.remove('visible'),150)">ⓘ</button>
+              <div class="method-tooltip" id="method-tooltip">
+                AUC (Area Under the Curve): Deterministic. Weights the pay curve against a normal performance distribution — same inputs always produce the same result.
+              </div>
+            </div>
+          </div>
+          <div class="mc-only fg-group" style="display:none">
+            <div class="fg">
+              <label class="fg-label">Simulations</label>
+              <input type="number" id="g-sims" value="2000" min="500" max="50000" step="500" oninput="updateGlobal()">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary card (collapsible) -->
+    <div class="card" id="summary-card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-title">📊 Summary</span>
+        <span class="card-chevron">▼</span>
+      </div>
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="summary-row" id="summary-row">
+          <div class="stat"><div class="stat-lbl">Total Headcount</div><div class="stat-val" id="s-hc">—</div></div>
+          <div class="stat"><div class="stat-lbl">Total Comp Cost</div><div class="stat-val" id="s-cost">—</div><div class="stat-sub">(unadjusted)</div></div>
+          <div class="stat"><div class="stat-lbl">Incentive CoS%</div><div class="stat-val" id="s-icos">—</div><div class="stat-sub" id="s-icos-sub"></div></div>
+          <div class="stat"><div class="stat-lbl">Total Comp CoS%</div><div class="stat-val" id="s-ccos">—</div></div>
+        </div>
+        <div id="adj-summary-row">
+          <div class="stat stat-adj"><div class="stat-lbl">Attrition-Adj. Revenue</div><div class="stat-val" id="s-adj-rev">—</div><div class="stat-sub" id="s-adj-rev-sub"></div></div>
+          <div class="stat stat-adj"><div class="stat-lbl">Adj. Incentive ($M)</div><div class="stat-val" id="s-adj-inc">—</div><div class="stat-sub" id="s-adj-inc-sub"></div></div>
+          <div class="stat stat-adj"><div class="stat-lbl">Adj. Inc CoS%</div><div class="stat-val" id="s-adj-icos">—</div><div class="stat-sub" id="s-adj-icos-sub"></div></div>
+          <div class="stat stat-adj stat-delta"><div class="stat-lbl">Adj. CCoS% ▲</div><div class="stat-val" id="s-adj-ccos">—</div><div class="stat-sub" id="s-adj-ccos-sub"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results table -->
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="card-title">Role Breakdown</span>
+        <button class="detail-toggle" id="detail-toggle" onclick="event.stopPropagation();toggleTableDetail()">Details ▸</button>
+        <span class="card-chevron">▼</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="rtable" id="results-table">
+          <thead id="results-thead">
+            <tr>
+              <th style="text-align:left">Role / Metric</th>
+              <th>HC</th>
+              <th>Cum TI ($M)</th>
+              <th>Median TI%</th>
+              <th>Avg TI%</th>
+              <th>Avg Inc ($K)</th>
+              <th>Total Inc ($M)</th>
+              <th>Inc CoS%</th>
+              <th>Total Comp ($M)</th>
+              <th>CCoS%</th>
+              <th class="mc-only">P50 ($M)</th>
+              <th class="mc-only">P25–P75</th>
+            </tr>
+          </thead>
+          <tbody id="results-tbody"></tbody>
+        </table>
+      </div>
+      <div class="cos-legend">
+        <span style="color:var(--sg-teal)">●</span> &lt;8% healthy &nbsp;&nbsp;
+        <span style="color:#C8860A">●</span> 8–14% watch &nbsp;&nbsp;
+        <span style="color:var(--sg-darkred)">●</span> &gt;14% elevated
+      </div>
+    </div>
+
+    <!-- MC percentiles table -->
+    <div class="card mc-only" id="mc-pct-card">
+      <div class="card-head" onclick="toggleCard(this)"><span class="card-title">Monte Carlo — Cost Distribution by Role</span><span class="card-chevron">▼</span></div>
+      <div style="overflow-x:auto">
+        <table class="pct-tbl">
+          <thead><tr><th>Role</th><th>HC</th><th>P10 ($M)</th><th>P25 ($M)</th><th class="p50">P50 ($M)</th><th>P75 ($M)</th><th>P90 ($M)</th><th>Mean ($M)</th></tr></thead>
+          <tbody id="mc-pct-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Plan A vs. Plan B Comparison (hidden until Plan B loaded) -->
+    <div id="compare-section" style="display:none">
+      <div class="section-header" id="compare-header" onclick="toggleCompare()">Plan Comparison: Plan A vs. Plan B<span class="section-collapse-chevron">▼</span></div>
+      <div id="compare-body" style="overflow-x:auto">
+        <table class="rtable">
+          <thead>
+            <tr>
+              <th style="text-align:left">Role</th>
+              <th>A Inc ($M)</th><th>B Inc ($M)</th><th>Δ Inc</th>
+              <th>A Inc CoS%</th><th>B Inc CoS%</th><th>Δ CoS%</th>
+              <th>A Comp ($M)</th><th>B Comp ($M)</th><th>Δ Comp</th>
+              <th>A CCoS%</th><th>B CCoS%</th><th>Δ CCoS%</th>
+            </tr>
+          </thead>
+          <tbody id="compare-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /output-section -->
+
+  <div id="roles-section"></div>
+  <button class="add-role" onclick="addRole()">+ Add Role</button>
+
+</div><!-- /app-layout -->
+
+<!-- SAVE DIALOG -->
+<div id="save-dialog" style="display:none" class="modal-overlay">
+  <div class="modal-box">
+    <h3>Save Model</h3>
+    <input type="text" id="save-model-name" placeholder="e.g. Pharma Rep - 2026">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn-secondary" onclick="closeSaveDialog()">Cancel</button>
+      <button class="btn-primary" onclick="confirmSaveModel()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ROLE COLORS
+// ═══════════════════════════════════════════════════════════════
+const ROLE_COLORS = [
+  { primary: '#16213F', alpha: 'rgba(22,33,63,0.12)',    label: 'Navy'     },
+  { primary: '#4C9A9C', alpha: 'rgba(76,154,156,0.12)',  label: 'Teal'     },
+  { primary: '#205D92', alpha: 'rgba(32,93,146,0.12)',   label: 'Blue'     },
+  { primary: '#27394F', alpha: 'rgba(39,57,79,0.12)',    label: 'DarkBlue' },
+  { primary: '#8D0801', alpha: 'rgba(141,8,1,0.12)',     label: 'DarkRed'  },
+  { primary: '#857874', alpha: 'rgba(133,120,116,0.12)', label: 'Slate'    },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let appState = {
+  method: 'auc',
+  globalRev: 100,
+  mcSims: 2000,
+  overlays: {},
+  openRoles: new Set([0]),
+  planB: null,   // null = no comparison; object = { name, roles, globalRev, method }
+  snapshot: null, // null = no snapshot; object = { name, globalRev, method, roles, timestamp }
+  roles: [
+    makeRole(1, 'Account Executive', ROLE_COLORS[0].primary, 20, 120000, 80000, 64000, 96000, [
+      makeMetric(100, 0, 150, 250, 2.5, 100, 25, 'Revenue')
+    ]),
+  ],
+  nextId: 2,
+};
+
+const openPanels  = {}; // key: `${ri}_${mi}`, value: 'sensitivity' | null
+const distVisible = {}; // key: `${ri}_${mi}`, undefined/true = shown, false = hidden
+const histVisible = {}; // key: `${ri}_${mi}`, true = shown (off by default)
+const mcHistCache = {}; // key: `${ri}_${mi}`, stores last MC QA samples for histogram
+let tableDetailExpanded = false;
+
+function makeRole(id, name, color, hc, base, ti, tiMin, tiMax, metrics) {
+  return {
+    id, name, color, hc, base, ti, tiMin, tiMax, metrics,
+    attrition:  0,   // annual attrition %, default 0 = no adjustment
+    rampMonths: 3,   // ramp period in months; effective ramp QA = (24-N)/24 × 100%
+  };
+}
+function makeMetric(weight, threshold, excellence, upside, finalSlope, avgQA, perfSD, name = 'Metric') {
+  return { name, weight, threshold, excellence, upside, finalSlope, avgQA, perfSD };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENGINE
+// ═══════════════════════════════════════════════════════════════
+function normPDF(x, mean, sd) {
+  if (sd <= 0) return x === mean ? 1 : 0;
+  const z = (x - mean) / sd;
+  return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+}
+
+function payCurvePayout(att, threshold, excellence, upside, finalSlope) {
+  const t = threshold / 100, e = excellence / 100, u = upside / 100, s = finalSlope;
+  if (att <= t) return 0;
+  if (att <= 1.0) return (att - t) / (1.0 - t);
+  if (att <= e)   return 1.0 + (att - 1.0) * (u - 1.0) / (e - 1.0);
+  return u + (att - e) * s;
+}
+
+function aucExpectedPayout(threshold, excellence, upside, finalSlope, avgQA, perfSD) {
+  const mean = avgQA / 100, sd = perfSD / 100;
+  const n    = 201;                     // 1% steps, 0% → 200%
+  const step = 2.0 / (n - 1);
+  const buckets = [];
+  for (let i = 0; i < n; i++) buckets.push(i * step);
+  const raw   = buckets.map(a => normPDF(a, mean, sd));
+  const total = raw.reduce((s,v) => s+v, 0);
+  if (total === 0) return payCurvePayout(mean, threshold, excellence, upside, finalSlope);
+  let w = 0;
+  for (let i = 0; i < buckets.length; i++)
+    w += (raw[i] / total) * payCurvePayout(buckets[i], threshold, excellence, upside, finalSlope);
+  return w;
+}
+
+function randNormal(mean, sd) {
+  let u; do { u = Math.random(); } while (u === 0);
+  const v = Math.random();
+  return Math.max(0, mean + Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) * sd);
+}
+
+function linspace(a, b, n) {
+  if (n <= 1) return [a];
+  const arr = [];
+  for (let i = 0; i < n; i++) arr.push(a + (b - a) * i / (n - 1));
+  return arr;
+}
+
+function percentile(sorted, p) {
+  if (!sorted.length) return 0;
+  return sorted[Math.max(0, Math.min(sorted.length - 1, Math.round(p * sorted.length / 100)))];
+}
+
+function calcRoleAUC(role, globalRev) {
+  const metricResults = [];
+  for (const m of role.metrics) {
+    if (m.weight === 0) { metricResults.push(null); continue; }
+    const w        = m.weight / 100;
+    const cumTI    = role.hc * role.ti * w / 1e6;
+    const medPayout = payCurvePayout(m.avgQA / 100, m.threshold, m.excellence, m.upside, m.finalSlope);
+    const avgTIPct  = aucExpectedPayout(m.threshold, m.excellence, m.upside, m.finalSlope, m.avgQA, m.perfSD);
+    const avgInc    = avgTIPct * role.ti * w / 1000;
+    const totalInc  = avgTIPct * cumTI;
+    metricResults.push({ cumTI, medPayout, avgTIPct, avgInc, totalInc });
+  }
+  const active    = metricResults.filter(r => r !== null);
+  const totalInc  = active.reduce((s, r) => s + r.totalInc, 0);
+  const totalComp = totalInc + (role.hc * role.base / 1e6);
+  const incCoS    = globalRev > 0 ? totalInc / globalRev : 0;
+  const cCoS      = globalRev > 0 ? totalComp / globalRev : 0;
+  return { metrics: metricResults, totalInc, totalComp, incCoS, cCoS };
+}
+
+function calcRoleMC(role, globalRev, nSims) {
+  const tis = linspace(role.tiMin, role.tiMax, role.hc);
+  const simTotals = new Array(nSims);
+  for (let sim = 0; sim < nSims; sim++) {
+    let roleCost = 0;
+    for (let r = 0; r < role.hc; r++) {
+      const ti = tis[r];
+      for (const m of role.metrics) {
+        if (m.weight === 0) continue;
+        roleCost += ti * (m.weight / 100) * payCurvePayout(
+          randNormal(m.avgQA / 100, m.perfSD / 100),
+          m.threshold, m.excellence, m.upside, m.finalSlope
+        );
+      }
+    }
+    simTotals[sim] = roleCost / 1e6;
+  }
+  simTotals.sort((a, b) => a - b);
+  const p10  = percentile(simTotals, 10);
+  const p25  = percentile(simTotals, 25);
+  const p50  = percentile(simTotals, 50);
+  const p75  = percentile(simTotals, 75);
+  const p90  = percentile(simTotals, 90);
+  const mean = simTotals.reduce((s,v) => s+v, 0) / nSims;
+  const aucResult = calcRoleAUC({ ...role, ti: (role.tiMin + role.tiMax) / 2 }, globalRev);
+  return { ...aucResult, simTotals, p10, p25, p50, p75, p90, mean };
+}
+
+// ─── Attrition / Ramp adjustment engine ───
+
+// Blended AUC expected payout fraction for the whole role (sum of weighted metric payouts)
+function calcBlendedPayout(role) {
+  let blended = 0;
+  for (const m of role.metrics) {
+    if (m.weight === 0) continue;
+    blended += (m.weight / 100) * aucExpectedPayout(m.threshold, m.excellence, m.upside, m.finalSlope, m.avgQA, m.perfSD);
+  }
+  return blended;
+}
+
+// Ramp payout: effective annual QA for a ramping rep = (24 - N) / 24
+// Formula derived from linear monthly steps: month k → k/(N+1) of normal, months N+1..12 → 100%
+// Closed form: sum = N/2 full months → avg = (12 - N/2) / 12 = (24 - N) / 24
+function calcRoleRampPayout(role) {
+  const N = Math.min(role.rampMonths || 3, 12);
+  const rampQAFrac = (24 - N) / 24;
+  const rampRole = {
+    ...role,
+    metrics: role.metrics.map(m => ({ ...m, avgQA: m.avgQA * rampQAFrac }))
+  };
+  return calcBlendedPayout(rampRole);
+}
+
+// Returns adjusted cost+revenue breakdown, or null when attrition = 0 (zero-regression guarantee)
+function calcRoleAdjustedCost(role, globalRev, totalHC, method) {
+  const A = (role.attrition || 0) / 100;
+  if (A === 0) return null;
+
+  const m  = method || appState.method;
+  const ti = m === 'mc' ? (role.tiMin + role.tiMax) / 2 : role.ti;
+
+  const normalPayout  = calcBlendedPayout(role);
+  const rampPayout    = calcRoleRampPayout(role);
+  const effectiveFull = role.hc * (1 - A / 2);
+  const effectiveRamp = role.hc * (A / 2);
+
+  // ── Cost side (incentive only) ──
+  const unadjustedInc = role.hc * ti * normalPayout / 1e6;
+  const adjustedInc   = (effectiveFull * ti * normalPayout + effectiveRamp * ti * rampPayout) / 1e6;
+
+  // ── Base salary stays constant ──
+  const baseCost = role.hc * role.base / 1e6;
+  const adjustedTotalComp = adjustedInc + baseCost;
+
+  // ── Revenue side ──
+  const N            = Math.min(role.rampMonths || 3, 12);
+  const rpf          = (1 - A / 2) + (A / 2) * ((24 - N) / 24);
+  const roleRevShare    = totalHC > 0 ? globalRev * (role.hc / totalHC) : 0;
+  const adjustedRoleRev = roleRevShare * rpf;
+
+  // ── CoS metrics using adjusted revenue ──
+  const adjustedIncCoS = adjustedRoleRev > 0 ? adjustedInc       / adjustedRoleRev : 0;
+  const adjustedCCoS   = adjustedRoleRev > 0 ? adjustedTotalComp / adjustedRoleRev : 0;
+
+  // ── Deltas ──
+  const deltaInc = adjustedInc - unadjustedInc;
+  const deltaPct = unadjustedInc !== 0 ? (deltaInc / unadjustedInc) * 100 : 0;
+  const deltaRev = adjustedRoleRev - roleRevShare;
+
+  const unadjIncCoS   = roleRevShare > 0 ? unadjustedInc              / roleRevShare : 0;
+  const unadjCCoS     = roleRevShare > 0 ? (unadjustedInc + baseCost) / roleRevShare : 0;
+  const deltaIncCoSpp = (adjustedIncCoS - unadjIncCoS) * 100;
+  const deltaCCoSpp   = (adjustedCCoS   - unadjCCoS)   * 100;
+
+  return {
+    unadjustedInc, adjustedInc, adjustedTotalComp, deltaInc, deltaPct,
+    rpf, roleRevShare, adjustedRoleRev, deltaRev,
+    adjustedIncCoS, adjustedCCoS, deltaIncCoSpp, deltaCCoSpp,
+    effectiveFull, effectiveRamp,
+    rampPayoutPct: rampPayout * 100, normalPayoutPct: normalPayout * 100
+  };
+}
+
+function computeResults() {
+  const rev     = appState.globalRev;
+  const method  = appState.method;
+  const nSims   = appState.mcSims;
+  const totalHC = appState.roles.reduce((s, r) => s + r.hc, 0);
+
+  const roleResults = appState.roles.map(role => {
+    const base = method === 'mc' ? calcRoleMC(role, rev, nSims) : calcRoleAUC(role, rev);
+    base.adjusted = calcRoleAdjustedCost(role, rev, totalHC, method);
+    return base;
+  });
+
+  const grandHC       = totalHC;
+  const grandInc      = roleResults.reduce((s, r) => s + r.totalInc,  0);
+  const grandComp     = roleResults.reduce((s, r) => s + r.totalComp, 0);
+  const blendedIncCoS = rev > 0 ? grandInc  / rev : 0;
+  const blendedCCoS   = rev > 0 ? grandComp / rev : 0;
+
+  // ── Adjusted grand totals ──
+  const anyAdj = roleResults.some(r => r.adjusted !== null);
+  let grandAdjInc = null, grandAdjComp = null, grandAdjRev = null;
+  let grandAdjIncCoS = null, grandAdjCCoS = null;
+
+  if (anyAdj) {
+    grandAdjInc  = 0;
+    grandAdjComp = 0;
+    grandAdjRev  = 0;
+    appState.roles.forEach((role, ri) => {
+      const rr = roleResults[ri];
+      if (rr.adjusted) {
+        grandAdjInc  += rr.adjusted.adjustedInc;
+        grandAdjComp += rr.adjusted.adjustedTotalComp;
+        grandAdjRev  += rr.adjusted.adjustedRoleRev;
+      } else {
+        grandAdjInc  += rr.totalInc;
+        grandAdjComp += rr.totalComp;
+        grandAdjRev  += totalHC > 0 ? rev * (role.hc / totalHC) : 0;
+      }
+    });
+    grandAdjIncCoS = grandAdjRev > 0 ? grandAdjInc  / grandAdjRev : 0;
+    grandAdjCCoS   = grandAdjRev > 0 ? grandAdjComp / grandAdjRev : 0;
+  }
+
+  return {
+    roleResults, grandHC, grandInc, grandComp, blendedIncCoS, blendedCCoS,
+    anyAdj,
+    grandAdjInc, grandAdjComp, grandAdjRev, grandAdjIncCoS, grandAdjCCoS
+  };
+}
+
+function buildPayCurveData(role) {
+  const points = [];
+  for (let i = 0; i <= 220; i++) {
+    const att = i / 100;
+    const payouts = role.metrics.filter(m => m.weight > 0)
+      .map(m => (m.weight / 100) * payCurvePayout(att, m.threshold, m.excellence, m.upside, m.finalSlope) * 100);
+    points.push({ x: i, y: Math.round(payouts.reduce((s,v) => s+v, 0) * 10) / 10 });
+  }
+  return points;
+}
+
+// Distribution curve for always-on chart overlay
+function buildDistData(metric) {
+  const mean = metric.avgQA / 100, sd = metric.perfSD / 100;
+  const pts = [];
+  for (let i = 0; i <= 200; i += 5)   // 5% intervals — 41 pts, right granularity for display
+    pts.push({ x: i, y: Math.round(normPDF(i / 100, mean, sd) * 100 * 1000) / 1000 });
+  return pts;
+}
+
+// In AUC mode: analytical normal PDF (same as distribution curve but as bars)
+// In MC mode: bin actual random QA samples → updates each re-run
+function buildHistBars(metric, cacheKey) {
+  if (appState.method === 'mc') {
+    const nSims = appState.mcSims || 2000;
+    // Generate fresh samples if not cached (cache cleared on re-run)
+    if (!mcHistCache[cacheKey]) {
+      const mean = metric.avgQA, sd = metric.perfSD;
+      const samples = [];
+      for (let i = 0; i < nSims; i++) {
+        // Box-Muller for normal random sample
+        const u1 = Math.random(), u2 = Math.random();
+        const z  = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+        samples.push(mean + sd * z);
+      }
+      mcHistCache[cacheKey] = samples;
+    }
+    const samples = mcHistCache[cacheKey];
+    // Bin into 5% buckets 0–200
+    const bins = {};
+    for (let i = 0; i <= 200; i += 5) bins[i] = 0;
+    samples.forEach(s => {
+      const bin = Math.max(0, Math.min(200, Math.round(s / 5) * 5));
+      if (bins[bin] !== undefined) bins[bin]++;
+    });
+    const total = samples.length;
+    return Object.entries(bins).map(([x, count]) => ({
+      x: Number(x),
+      // Convert probability → density to match analytical curve scale.
+      // Curve = normPDF(x_frac, μ, σ) × 100. Histogram bin probability ≈ PDF × bin_width_frac (0.05).
+      // So density = (count/total) / 0.05 × 100 = count/total × 2000
+      y: Math.round((count / total) * 2000 * 1000) / 1000
+    }));
+  }
+  // AUC mode: analytical PDF
+  const mean = metric.avgQA / 100, sd = metric.perfSD / 100;
+  const pts = [];
+  for (let i = 0; i <= 200; i += 5)
+    pts.push({ x: i, y: Math.round(normPDF(i / 100, mean, sd) * 100 * 1000) / 1000 });
+  return pts;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART INSTANCES
+// ═══════════════════════════════════════════════════════════════
+const chartMap = new Map();
+
+function renderChartGrid() {
+  Object.keys(openPanels).forEach(key => {
+    const [ri, mi] = key.split('_').map(Number);
+    if (!appState.roles[ri] || !appState.roles[ri].metrics[mi]) delete openPanels[key];
+  });
+  chartMap.forEach(c => { try { c.destroy(); } catch(e) {} });
+  chartMap.clear();
+  appState.roles.forEach((role, ri) => {
+    role.metrics.forEach((metric, mi) => initPaneChart(ri, mi, role, metric));
+  });
+}
+
+function initPaneChart(ri, mi, role, metric) {
+  const canvas = document.getElementById(`chart-canvas-${ri}-${mi}`);
+  if (!canvas) return;
+
+  // Pay curve (single metric at weight=100 for shape)
+  const payCurveData = buildPayCurveData({ metrics: [{ ...metric, weight: 100 }] });
+  // Distribution — always shown as overlay
+  const distData = buildDistData(metric);
+
+  const datasets = [
+    {
+      label: 'Plan A',
+      data: payCurveData,
+      borderColor: role.color,
+      backgroundColor: 'transparent',
+      borderWidth: 2.5,
+      pointRadius: 0,
+      tension: 0,
+      yAxisID: 'y',
+      order: 1,
+    },
+    {
+      label: 'Attainment Dist.',
+      data: distData,
+      hidden: distVisible[ri + '_' + mi] === false,
+      borderColor: role.color,
+      backgroundColor: hexToRgba(role.color, 0.13),
+      fill: true,
+      borderWidth: 1,
+      borderDash: [3, 3],
+      pointRadius: 0,
+      tension: 0.3,
+      yAxisID: 'y2',
+      order: 3,
+    },
+    {
+      type: 'bar',
+      label: 'Histogram',
+      data: buildHistBars(metric, ri + '_' + mi),
+      hidden: histVisible[ri + '_' + mi] !== true,
+      backgroundColor: hexToRgba(role.color, 0.22),
+      borderColor: hexToRgba(role.color, 0.45),
+      borderWidth: 1,
+      borderRadius: 2,
+      yAxisID: 'y2',
+      order: 4,
+      barThickness: 12,
+    },
+  ];
+
+  // Plan B overlay — dashed line if Plan B is loaded and has matching role/metric
+  if (appState.planB) {
+    const bRole   = appState.planB.roles[ri];
+    const bMetric = bRole?.metrics[mi];
+    if (bRole && bMetric) {
+      const bCurveData = buildPayCurveData({ metrics: [{ ...bMetric, weight: 100 }] });
+      datasets.push({
+        label: 'Plan B',
+        data: bCurveData,
+        borderColor: role.color,
+        borderWidth: 2,
+        borderDash: [6, 4],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        tension: 0,
+        yAxisID: 'y',
+        order: 2,
+      });
+    }
+  }
+
+  // Snapshot overlay — dotted line if snapshot exists and has matching role/metric
+  if (appState.snapshot) {
+    const sRole   = appState.snapshot.roles[ri];
+    const sMetric = sRole?.metrics[mi];
+    if (sRole && sMetric) {
+      const sCurveData = buildPayCurveData({ metrics: [{ ...sMetric, weight: 100 }] });
+      datasets.push({
+        label: 'Snapshot',
+        data: sCurveData,
+        borderColor: role.color,
+        borderWidth: 1.5,
+        borderDash: [2, 3],
+        backgroundColor: 'transparent',
+        pointRadius: 0,
+        tension: 0,
+        yAxisID: 'y',
+        order: 2,
+      });
+    }
+  }
+
+  // Compute axis font sizes based on chart height
+  const chartAreaEl = document.getElementById('chart-area-' + ri + '-' + mi);
+  const chartHpx    = chartAreaEl ? parseInt(getComputedStyle(chartAreaEl).height) : 400;
+  const axisTitleSz = chartHpx >= 380 ? 16 : chartHpx >= 300 ? 14 : 12;
+  const axisTickSz  = chartHpx >= 380 ? 13 : chartHpx >= 300 ? 12 : 11;
+
+  const scales = {
+    x: {
+      type: 'linear', min: 0, max: 220,
+      title: { display: true, text: 'QA %', font: { size: axisTitleSz, family: 'Calibri' } },
+      ticks: { callback: v => v + '%', font: { size: axisTickSz, family: 'Calibri' }, color: '#857874' },
+      grid: { color: 'rgba(133,120,116,0.15)' },
+    },
+    y: {
+      title: { display: true, text: 'Payout %', font: { size: axisTitleSz, family: 'Calibri' } },
+      ticks: { callback: v => v + '%', font: { size: axisTickSz, family: 'Calibri' }, color: '#857874' },
+      grid: { color: 'rgba(133,120,116,0.15)' },
+      min: 0,
+    },
+    y2: {
+      position: 'right',
+      title: { display: true, text: 'Density', font: { size: axisTickSz, family: 'Calibri' } },
+      ticks: { display: false },
+      grid: { drawOnChartArea: false },
+      min: 0,
+    },
+  };
+
+  const ctx = canvas.getContext('2d');
+  chartMap.set(`${ri}_${mi}`, new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          display: !!(appState.planB || appState.snapshot),
+          labels: {
+            filter: item => !['Attainment Dist.', 'Histogram'].includes(item.text),
+            font: { size: 11, family: 'Calibri' },
+            boxWidth: 20,
+            padding: 8,
+          },
+        },
+        tooltip: { callbacks: { label: c => `${c.dataset.label}: ${c.parsed.y != null ? c.parsed.y.toFixed(2) : ''}` } },
+      },
+      scales,
+    },
+  }));
+}
+
+// Convert hex color to rgba string
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SLIDING SIDE PANELS (Sensitivity)
+// ═══════════════════════════════════════════════════════════════
+function togglePanel(ri, mi, type) {
+  const key   = `${ri}_${mi}`;
+  const panel = document.getElementById(`side-panel-${ri}-${mi}`);
+  const inner = document.getElementById(`side-panel-inner-${ri}-${mi}`);
+  if (!panel || !inner) return;
+  const current = openPanels[key];
+  if (current === type) {
+    panel.classList.remove('open');
+    openPanels[key] = null;
+    inner.innerHTML = '';
+  } else {
+    openPanels[key] = type;
+    panel.classList.add('open');
+    inner.innerHTML = buildPanelContent(ri, mi, type);
+  }
+  setTimeout(() => { const c = chartMap.get(key); if (c) c.resize(); }, 320);
+  updatePanelButtons(ri, mi);
+}
+
+function updatePanelButtons(ri, mi) {
+  const open = openPanels[`${ri}_${mi}`];
+  const btn = document.getElementById(`panel-btn-${ri}-${mi}-sensitivity`);
+  if (btn) btn.classList.toggle('active', open === 'sensitivity');
+}
+
+// ── Section collapse helpers ──
+function toggleCard(el) {
+  const card = el.closest('.card');
+  if (!card) return;
+  card.classList.toggle('collapsed');
+  const ch = el.querySelector('.card-chevron');
+  if (ch) ch.style.transform = card.classList.contains('collapsed') ? 'rotate(-90deg)' : '';
+}
+
+function toggleTableSection(ri) {
+  const hdr = document.getElementById('role-section-' + ri);
+  if (!hdr) return;
+  const collapsed = hdr.classList.toggle('collapsed');
+  document.querySelectorAll('tr[data-section="' + ri + '"]').forEach(r => {
+    r.style.display = collapsed ? 'none' : '';
+  });
+  const ch = hdr.querySelector('.role-section-chevron');
+  if (ch) ch.style.transform = collapsed ? 'rotate(-90deg)' : '';
+}
+
+function toggleCompare() {
+  const body = document.getElementById('compare-body');
+  const hdr  = document.getElementById('compare-header');
+  if (!body || !hdr) return;
+  const hidden = body.classList.toggle('hidden');
+  const ch = hdr.querySelector('.section-collapse-chevron');
+  if (ch) ch.style.transform = hidden ? 'rotate(-90deg)' : '';
+}
+
+function toggleTableDetail() {
+  tableDetailExpanded = !tableDetailExpanded;
+  const btn = document.getElementById('detail-toggle');
+  if (btn) btn.textContent = tableDetailExpanded ? 'â—‚ Compact' : 'Details â–¸';
+  renderResults();
+}
+
+function toggleDist(ri, mi) {
+  const key = ri + '_' + mi;
+  distVisible[key] = distVisible[key] === false ? true : false;
+  const chart = chartMap.get(key);
+  if (chart) {
+    const idx = chart.data.datasets.findIndex(d => d.label === 'Attainment Dist.');
+    if (idx >= 0) { chart.setDatasetVisibility(idx, distVisible[key] !== false); chart.update(); }
+  }
+  const btn = document.getElementById(`dist-btn-${ri}-${mi}`);
+  if (btn) btn.classList.toggle('active', distVisible[key] !== false);
+}
+
+function toggleHist(ri, mi) {
+  const key = ri + '_' + mi;
+  histVisible[key] = histVisible[key] === true ? false : true;
+  const chart = chartMap.get(key);
+  if (chart) {
+    const idx = chart.data.datasets.findIndex(d => d.label === 'Histogram');
+    if (idx >= 0) { chart.setDatasetVisibility(idx, histVisible[key] === true); chart.update(); }
+  }
+  const btn = document.getElementById(`hist-btn-${ri}-${mi}`);
+  if (btn) btn.classList.toggle('active', histVisible[key] === true);
+}
+
+function buildPanelContent(ri, mi, type) {
+  const role   = appState.roles[ri];
+  const metric = role.metrics[mi];
+  const rc     = ROLE_COLORS[ri % ROLE_COLORS.length];
+  if (type === 'sensitivity') return buildSensitivityPanel(metric, rc);
+  return '';
+}
+
+function buildSensitivityPanel(metric, rc) {
+  const qaVals = [70, 80, 90, 100, 110, 120, 130];
+  const sdVals = [10, 15, 20, 25, 30, 35];
+
+  let html = `<div class="panel-title" style="color:${rc.primary}">Sensitivity</div>`;
+  html += `<div style="font-size:11px;color:var(--sg-grey);margin-bottom:6px;font-style:italic">Steady-state attainment. Attrition/ramp adjustment applied separately.</div>`;
+  html += `<table class="panel-table sensitivity-panel-table">`;
+  html += `<thead><tr><th style="background:${rc.primary}">QA \\ SD</th>`;
+  sdVals.forEach(sd => { html += `<th style="background:${rc.primary}">${sd}%</th>`; });
+  html += `</tr></thead><tbody>`;
+  qaVals.forEach(qa => {
+    html += `<tr><td style="font-weight:700;color:${rc.primary};text-align:left">${qa}%</td>`;
+    sdVals.forEach(sd => {
+      const pct = (aucExpectedPayout(metric.threshold, metric.excellence, metric.upside, metric.finalSlope, qa, sd) * 100).toFixed(1);
+      const isCurrent = qa === Math.round(metric.avgQA) && sd === Math.round(metric.perfSD);
+      html += `<td style="${isCurrent ? `font-weight:700;background:${rc.alpha}` : ''}">${pct}%</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  return html;
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+function syncSlider(sliderEl, ri, mi, field) {
+  const val = parseFloat(sliderEl.value);
+  const row = sliderEl.closest('.slider-fg');
+  if (row) { const num = row.querySelector('.param-num'); if (num) num.value = val; }
+  updateMetricField(ri, mi, field, val);
+}
+
+function syncNum(numEl, ri, mi, field) {
+  const val = parseFloat(numEl.value) || 0;
+  const row = numEl.closest('.slider-fg');
+  if (row) {
+    const slider = row.querySelector('.param-slider');
+    if (slider) slider.value = Math.min(Math.max(val, parseFloat(slider.min)), parseFloat(slider.max));
+  }
+  updateMetricField(ri, mi, field, val);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// METRIC ROW HTML BUILDER
+// ═══════════════════════════════════════════════════════════════
+function buildMetricRowHTML(ri, mi, role, metric) {
+  const canRemove = role.metrics.length > 1;
+
+  function sliderFg(label, field, value, min, max, step) {
+    return `<div class="fg slider-fg">
+      <label class="fg-label">${label}</label>
+      <div class="slider-pair">
+        <input type="range" class="param-slider" min="${min}" max="${max}" step="${step}" value="${value}"
+               oninput="syncSlider(this,${ri},${mi},'${field}')">
+        <input type="number" class="param-num" min="${min}" max="${max}" step="${step}" value="${value}"
+               onchange="syncNum(this,${ri},${mi},'${field}')">
+      </div>
+    </div>`;
+  }
+
+  return `
+<div class="metric-row" id="pane-${ri}-${mi}" style="--role-primary:${role.color}">
+  <div class="metric-params">
+    <div class="metric-name-row">
+      <input type="text" value="${metric.name || ''}" placeholder="Metric"
+        oninput="updateMetricField(${ri},${mi},'name',this.value)">
+      <span class="rh-label" style="font-size:10px;flex-shrink:0">Wt%</span>
+      <input type="number" class="metric-weight-input" value="${metric.weight}" min="0" max="100"
+             oninput="updateMetricField(${ri},${mi},'weight',+this.value)">
+      <span class="metric-weight-badge" id="w-badge-${ri}-${mi}" style="font-size:10px">${metric.weight}%</span>
+      ${canRemove ? `<button class="btn-danger btn-sm" style="padding:1px 5px;flex-shrink:0" onclick="removeMetric(${ri},${mi})">✕</button>` : ''}
+    </div>
+    ${sliderFg('Threshold %', 'threshold', metric.threshold, 0, 100, 1)}
+    ${sliderFg('Excellence %', 'excellence', metric.excellence, 100, 200, 1)}
+    ${sliderFg('Upside %', 'upside', metric.upside, 100, 500, 5)}
+    ${sliderFg('PER', 'finalSlope', metric.finalSlope, 0, 5, 0.1)}
+    ${sliderFg('Avg QA %', 'avgQA', metric.avgQA, 50, 150, 1)}
+    ${sliderFg('Perf SD %', 'perfSD', metric.perfSD, 5, 50, 1)}
+    <div class="metric-panel-buttons">
+      <button id="panel-btn-${ri}-${mi}-sensitivity" class="panel-toggle-btn"
+              onclick="togglePanel(${ri},${mi},'sensitivity')">⊞ Sensitivity</button>
+      <button id="dist-btn-${ri}-${mi}" class="panel-toggle-btn${distVisible[ri + '_' + mi] === false ? '' : ' active'}"
+              onclick="toggleDist(${ri},${mi})">∿ Distribution</button>
+      <button id="hist-btn-${ri}-${mi}" class="panel-toggle-btn${histVisible[ri + '_' + mi] === true ? ' active' : ''}"
+              onclick="toggleHist(${ri},${mi})">▦ Histogram</button>
+    </div>
+  </div>
+  <div class="metric-chart-area" id="chart-area-${ri}-${mi}">
+    <div class="chart-canvas-panel">
+      <canvas id="chart-canvas-${ri}-${mi}"></canvas>
+      <div class="metric-kpi-chips" id="kpi-chips-${ri}-${mi}">
+        <div class="kpi-chip"><div class="kpi-chip-label">Avg TI%</div><div class="kpi-chip-value" id="kpi-avgti-${ri}-${mi}">—</div><div class="kpi-chip-delta" id="kpi-avgti-delta-${ri}-${mi}"></div></div>
+        <div class="kpi-chip"><div class="kpi-chip-label">Inc CoS%</div><div class="kpi-chip-value" id="kpi-icos-${ri}-${mi}">—</div><div class="kpi-chip-delta" id="kpi-icos-delta-${ri}-${mi}"></div></div>
+        <div class="kpi-chip"><div class="kpi-chip-label">Total Inc</div><div class="kpi-chip-value" id="kpi-tinc-${ri}-${mi}">—</div><div class="kpi-chip-delta" id="kpi-tinc-delta-${ri}-${mi}"></div></div>
+      </div>
+    </div>
+    <div class="chart-side-panel" id="side-panel-${ri}-${mi}">
+      <div class="side-panel-inner" id="side-panel-inner-${ri}-${mi}"></div>
+    </div>
+  </div>
+</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER RESULTS
+// ═══════════════════════════════════════════════════════════════
+function f2(n, d=2) { return n.toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function fM(n)      { return (n < 0 ? '−$' : '$') + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + 'M'; }
+function fPct(n, d=1) { return (n*100).toFixed(d) + '%'; }
+
+function cosColor(pct) {
+  if (pct > 0.14) return 'var(--sg-darkred)';
+  if (pct > 0.08) return '#C8860A';
+  return 'var(--sg-teal)';
+}
+
+function renderExecSummary(res) {
+  const el = document.getElementById('exec-summary-body');
+  if (!el) return;
+  const rev     = appState.globalRev;
+  const roles   = appState.roles;
+  const totalHC = res.grandHC;
+
+  const rolePhrases = roles.map((role, ri) => {
+    const rr = res.roleResults[ri];
+    const medPcts = rr.metrics
+      ? rr.metrics.filter(m => m).map(m => (m.medPayout * 100).toFixed(0) + '%')
+      : [];
+    const medStr = medPcts.length ? ` · ${medPcts[0]} median payout` : '';
+    return `${role.name} (${role.hc} reps${medStr})`;
+  }).join('; ');
+
+  const incCoS  = res.blendedIncCoS;
+  const cCoS    = res.blendedCCoS;
+  const cosLbl  = incCoS > 0.14 ? 'elevated' : incCoS > 0.08 ? 'moderate' : 'healthy';
+
+  let attrNote = '';
+  if (res.anyAdj && res.grandAdjCCoS != null) {
+    const bpDelta = ((res.grandAdjCCoS - cCoS) * 100).toFixed(1);
+    attrNote = ` Accounting for rep attrition and ramp, CCoS% rises to <strong style="color:${cosColor(res.grandAdjCCoS)}">${fPct(res.grandAdjCCoS)}</strong> — a +${bpDelta}pp increase driven by base salary drag on reduced revenue.`;
+  }
+
+  let planBNote = '';
+  if (appState.planB) {
+    try {
+      const bRes  = computeResultsForSnapshot(appState.planB);
+      const delta = ((cCoS - bRes.blendedCCoS) * 100).toFixed(1);
+      const dir   = cCoS > bRes.blendedCCoS ? 'higher' : 'lower';
+      planBNote   = ` Compared to <strong>${appState.planB.name}</strong>, this plan's CCoS% is ${Math.abs(delta)}pp ${dir}.`;
+    } catch(e) {}
+  } else if (appState.snapshot) {
+    try {
+      const sRes  = computeResultsForSnapshot(appState.snapshot);
+      const delta = ((cCoS - sRes.blendedCCoS) * 100).toFixed(1);
+      const dir   = cCoS > sRes.blendedCCoS ? 'higher' : 'lower';
+      planBNote   = ` Compared to the frozen snapshot, this plan's CCoS% is ${Math.abs(delta)}pp ${dir}.`;
+    } catch(e) {}
+  }
+
+  el.innerHTML = `<p class="exec-narrative">
+    This model covers <strong>${totalHC.toLocaleString()} reps</strong> across
+    <strong>${roles.length} role${roles.length !== 1 ? 's' : ''}</strong>
+    (${rolePhrases})
+    against a <strong>$${f2(rev)}M revenue target</strong>.
+    Total incentive cost is <strong>$${f2(res.grandInc)}M</strong> with an
+    <strong style="color:${cosColor(incCoS)}">${fPct(incCoS)} incentive cost of sale</strong> — <em>${cosLbl}</em> relative to SalesGlobe benchmarks.
+    Including base salary, total compensation cost is
+    <strong>$${f2(res.grandComp)}M</strong>
+    (<strong style="color:${cosColor(cCoS)}">${fPct(cCoS)} total CCoS%</strong>).${attrNote}${planBNote}
+  </p>`;
+}
+
+function renderResults() {
+  const _savedScroll = window.scrollY;   // preserve position — compare table resize causes jitter
+  const res = computeResults();
+  const rev = appState.globalRev;
+
+  // ── Summary cards (always visible) ──
+  document.getElementById('s-hc').textContent   = res.grandHC.toLocaleString();
+  document.getElementById('s-cost').textContent  = '$' + f2(res.grandComp) + 'M';
+  const icosEl = document.getElementById('s-icos');
+  icosEl.textContent = fPct(res.blendedIncCoS);
+  icosEl.style.color = cosColor(res.blendedIncCoS);
+  document.getElementById('s-icos-sub').textContent = 'of $' + rev + 'M rev';
+  const ccosEl = document.getElementById('s-ccos');
+  ccosEl.textContent = fPct(res.blendedCCoS);
+  ccosEl.style.color = cosColor(res.blendedCCoS);
+
+  // ── Adjusted summary row ──
+  const anyAdj = res.anyAdj;
+  const adjRow = document.getElementById('adj-summary-row');
+  adjRow.classList.toggle('visible', anyAdj);
+
+  if (anyAdj) {
+    document.getElementById('s-adj-rev').textContent      = '$' + f2(res.grandAdjRev)  + 'M';
+    document.getElementById('s-adj-rev-sub').textContent  = `vs $${f2(rev)}M baseline`;
+    document.getElementById('s-adj-inc').textContent      = '$' + f2(res.grandAdjInc)  + 'M';
+    document.getElementById('s-adj-inc-sub').textContent  = `vs $${f2(res.grandInc)}M unadj.`;
+    document.getElementById('s-adj-icos').textContent     = fPct(res.grandAdjIncCoS);
+    document.getElementById('s-adj-icos-sub').textContent = `vs ${fPct(res.blendedIncCoS)} unadj.`;
+    document.getElementById('s-adj-ccos').textContent     = fPct(res.grandAdjCCoS);
+    document.getElementById('s-adj-ccos-sub').textContent = `vs ${fPct(res.blendedCCoS)} unadj. ↑ base drag`;
+  }
+
+  // ── Results table ──
+  const thead = document.getElementById('results-thead');
+
+  if (!tableDetailExpanded) {
+    // ── COMPACT MODE: 6 columns, one row per role ──
+    thead.innerHTML = `<tr>
+      <th style="text-align:left">Role</th>
+      <th>HC</th>
+      <th>Total Inc ($M)</th>
+      <th>Inc CoS%</th>
+      <th>Total Comp ($M)</th>
+      <th>CCoS%</th>
+    </tr>`;
+    let tbody = '';
+    appState.roles.forEach((role, ri) => {
+      const rr = res.roleResults[ri];
+      tbody += `<tr>
+        <td style="text-align:left;font-weight:700;color:${role.color}">${role.name}</td>
+        <td>${role.hc}</td>
+        <td>${f2(rr.totalInc)}</td>
+        <td><span style="color:${cosColor(rr.incCoS)};font-weight:600">${fPct(rr.incCoS)}</span></td>
+        <td>${f2(rr.totalComp)}</td>
+        <td><span style="color:${cosColor(rr.cCoS)};font-weight:600">${fPct(rr.cCoS)}</span></td>
+      </tr>`;
+    });
+    tbody += `<tr class="total-row">
+      <td colspan="2" style="text-align:left"><strong>GRAND TOTAL</strong></td>
+      <td>${f2(res.grandInc)}</td>
+      <td><span style="color:${cosColor(res.blendedIncCoS)};font-weight:600">${fPct(res.blendedIncCoS)}</span></td>
+      <td>${f2(res.grandComp)}</td>
+      <td><span style="color:${cosColor(res.blendedCCoS)};font-weight:600">${fPct(res.blendedCCoS)}</span></td>
+    </tr>`;
+    document.getElementById('results-tbody').innerHTML = tbody;
+  } else {
+    // ── DETAIL MODE: full columns, per-metric rows ──
+    const adjCols = anyAdj
+      ? `<th>Eff. HC</th><th>Adj. Inc ($M)</th><th>Δ Inc</th><th>Adj. Inc CoS%</th><th>Adj. CCoS%</th><th>Δ CCoS% (pp)</th>`
+      : '';
+    thead.innerHTML = `<tr>
+      <th style="text-align:left">Metric</th>
+      <th>Cum TI ($M)</th><th>Median TI%</th><th>Avg TI%</th>
+      <th>Avg Inc ($K)</th><th>Total Inc ($M)</th><th>Inc CoS%</th>
+      <th>Total Comp ($M)</th><th>CCoS%</th>
+      ${adjCols}
+      <th class="mc-only">P50 ($M)</th><th class="mc-only">P25–P75</th>
+    </tr>`;
+
+    const totalCols = 9 + (anyAdj ? 6 : 0) + 2;
+    let tbody = '';
+
+    appState.roles.forEach((role, ri) => {
+      const rr     = res.roleResults[ri];
+      const active = role.metrics.filter(m => m.weight > 0);
+      const adj    = rr.adjusted;
+
+      const nM = active.length;
+      tbody += `<tr class="role-section-hdr" id="role-section-${ri}" onclick="toggleTableSection(${ri})">
+        <td colspan="${totalCols}" style="background:${role.color}">
+          ${role.name} &nbsp;·&nbsp; HC: ${role.hc} &nbsp;·&nbsp; ${nM} Metric${nM !== 1 ? 's' : ''}
+          <span class="role-section-chevron">▼</span>
+        </td>
+      </tr>`;
+
+      active.forEach((m) => {
+        const mr = rr.metrics[role.metrics.indexOf(m)];
+        tbody += `<tr class="role-data-row" data-section="${ri}">
+          <td style="padding-left:20px;color:var(--sg-grey);font-size:13px">${m.name || 'Metric'}</td>
+          <td>${f2(mr.cumTI, 3)}</td>
+          <td>${fPct(mr.medPayout)}</td>
+          <td>${fPct(mr.avgTIPct)}</td>
+          <td>${f2(mr.avgInc, 1)}</td>
+          <td>${f2(mr.totalInc, 3)}</td>
+          <td>—</td><td>—</td><td>—</td>
+          ${anyAdj ? `<td colspan="6" style="color:var(--sg-grey)">—</td>` : ''}
+          <td class="mc-only">—</td><td class="mc-only">—</td>
+        </tr>`;
+      });
+
+      let adjTotalCells = '';
+      if (anyAdj) {
+        if (adj) {
+          const effHC  = `${adj.effectiveFull.toFixed(1)} / ${adj.effectiveRamp.toFixed(1)}r`;
+          const dSign  = adj.deltaCCoSpp > 0 ? '+' : '';
+          const dStyle = adj.deltaCCoSpp > 0.05 ? 'color:var(--sg-darkred);font-weight:600' : 'color:var(--sg-grey)';
+          adjTotalCells = `
+            <td style="font-size:12px">${effHC}</td>
+            <td>${f2(adj.adjustedInc)}</td>
+            <td style="color:var(--sg-teal);font-weight:600">${fM(adj.deltaInc)}</td>
+            <td><span style="color:${cosColor(adj.adjustedIncCoS)};font-weight:600">${fPct(adj.adjustedIncCoS)}</span></td>
+            <td style="${dStyle}">${fPct(adj.adjustedCCoS)}</td>
+            <td style="${dStyle}">${dSign}${adj.deltaCCoSpp.toFixed(2)}pp</td>`;
+        } else {
+          adjTotalCells = `<td colspan="6" style="color:var(--sg-grey);text-align:center">—</td>`;
+        }
+      }
+      const mcTotalCells = appState.method === 'mc' && rr.p50 !== undefined
+        ? `<td class="mc-only">${f2(rr.p50)}</td><td class="mc-only">${f2(rr.p25)}–${f2(rr.p75)}</td>`
+        : `<td class="mc-only">—</td><td class="mc-only">—</td>`;
+
+      tbody += `<tr class="role-data-row role-total-row" data-section="${ri}">
+        <td style="color:var(--sg-navy);font-weight:700">Total</td>
+        <td colspan="4"></td>
+        <td>${f2(rr.totalInc)}</td>
+        <td><span style="color:${cosColor(rr.incCoS)};font-weight:600">${fPct(rr.incCoS)}</span></td>
+        <td>${f2(rr.totalComp)}</td>
+        <td><span style="color:${cosColor(rr.cCoS)};font-weight:600">${fPct(rr.cCoS)}</span></td>
+        ${adjTotalCells}
+        ${mcTotalCells}
+      </tr>`;
+    });
+
+    const adjGrandCols = anyAdj ? `<td colspan="6"></td>` : '';
+    tbody += `<tr class="total-row">
+      <td colspan="5"><strong>GRAND TOTAL</strong></td>
+      <td>${f2(res.grandInc)}</td>
+      <td><span style="color:${cosColor(res.blendedIncCoS)};font-weight:600">${fPct(res.blendedIncCoS)}</span></td>
+      <td>${f2(res.grandComp)}</td>
+      <td><span style="color:${cosColor(res.blendedCCoS)};font-weight:600">${fPct(res.blendedCCoS)}</span></td>
+      ${adjGrandCols}
+      <td class="mc-only"></td><td class="mc-only"></td>
+    </tr>`;
+    document.getElementById('results-tbody').innerHTML = tbody;
+  }
+
+
+  // ── MC percentile table ──
+  if (appState.method === 'mc') {
+    let pctHtml = '';
+    appState.roles.forEach((role, ri) => {
+      const rr = res.roleResults[ri];
+      pctHtml += `<tr>
+        <td style="background:${role.color};color:white;font-weight:700;text-align:left;padding-left:10px">${role.name}</td>
+        <td>${role.hc}</td>
+        <td>${rr.p10 !== undefined ? f2(rr.p10) : '—'}</td>
+        <td>${rr.p25 !== undefined ? f2(rr.p25) : '—'}</td>
+        <td class="p50">${rr.p50 !== undefined ? f2(rr.p50) : '—'}</td>
+        <td>${rr.p75 !== undefined ? f2(rr.p75) : '—'}</td>
+        <td>${rr.p90 !== undefined ? f2(rr.p90) : '—'}</td>
+        <td>${rr.mean !== undefined ? f2(rr.mean) : '—'}</td>
+      </tr>`;
+    });
+    document.getElementById('mc-pct-tbody').innerHTML = pctHtml;
+  }
+
+  renderChartGrid();
+
+  // ── Update KPI chips ──
+  const snapshotRes = appState.snapshot ? computeResultsForSnapshot(appState.snapshot) : null;
+  appState.roles.forEach((role, ri) => {
+    const rr = res.roleResults[ri];
+    if (!rr) return;
+    role.metrics.forEach((metric, mi) => {
+      const mr = rr.metrics ? rr.metrics[mi] : null;
+      if (!mr) return;
+      const avgTiEl = document.getElementById(`kpi-avgti-${ri}-${mi}`);
+      const icosEl  = document.getElementById(`kpi-icos-${ri}-${mi}`);
+      const tincEl  = document.getElementById(`kpi-tinc-${ri}-${mi}`);
+      if (!avgTiEl) return;
+
+      avgTiEl.textContent = fPct(mr.avgTIPct);
+      const incCoSPct = rev > 0 ? mr.totalInc / rev : 0;
+      icosEl.textContent = fPct(incCoSPct);
+      icosEl.style.color = cosColor(incCoSPct);
+      tincEl.textContent = '$' + mr.totalInc.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + 'M';
+
+      // Delta chips (snapshot comparison)
+      const avgTiDelta = document.getElementById(`kpi-avgti-delta-${ri}-${mi}`);
+      const icosDelta  = document.getElementById(`kpi-icos-delta-${ri}-${mi}`);
+      const tincDelta  = document.getElementById(`kpi-tinc-delta-${ri}-${mi}`);
+      if (snapshotRes && snapshotRes.roleResults[ri]) {
+        const smr = snapshotRes.roleResults[ri].metrics ? snapshotRes.roleResults[ri].metrics[mi] : null;
+        if (smr) {
+          const snapRev = appState.snapshot.globalRev || 100;
+          const dTI  = mr.avgTIPct - smr.avgTIPct;
+          const dCoS = incCoSPct - (snapRev > 0 ? smr.totalInc / snapRev : 0);
+          const dInc = mr.totalInc - smr.totalInc;
+
+          avgTiDelta.textContent = (dTI >= 0 ? '+' : '') + fPct(dTI);
+          avgTiDelta.className = 'kpi-chip-delta ' + (Math.abs(dTI) < 0.001 ? '' : dTI > 0 ? 'kpi-delta-pos' : 'kpi-delta-neg');
+
+          icosDelta.textContent = (dCoS >= 0 ? '+' : '') + fPct(dCoS);
+          icosDelta.className = 'kpi-chip-delta ' + (Math.abs(dCoS) < 0.0001 ? '' : dCoS > 0 ? 'kpi-delta-pos' : 'kpi-delta-neg');
+
+          tincDelta.textContent = (dInc >= 0 ? '+$' : '-$') + Math.abs(dInc).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + 'M';
+          tincDelta.className = 'kpi-chip-delta ' + (Math.abs(dInc) < 0.001 ? '' : dInc > 0 ? 'kpi-delta-pos' : 'kpi-delta-neg');
+        } else {
+          avgTiDelta.textContent = icosDelta.textContent = tincDelta.textContent = '';
+        }
+      } else {
+        avgTiDelta.textContent = icosDelta.textContent = tincDelta.textContent = '';
+      }
+    });
+  });
+
+  if (appState.planB || appState.snapshot) renderCompareTable();
+  renderExecSummary(res);
+  window.scrollTo({ top: _savedScroll, behavior: 'instant' });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ROLES
+// ═══════════════════════════════════════════════════════════════
+function renderRoles() {
+  Object.keys(openPanels).forEach(k => delete openPanels[k]);
+  const container = document.getElementById('roles-section');
+  let html = '';
+
+  appState.roles.forEach((role, ri) => {
+    const isOpen = appState.openRoles.has(ri);
+    const isMC   = appState.method === 'mc';
+    const A      = (role.attrition || 0) / 100;
+
+    const tiFields = isMC
+      ? `<span class="rh-label">TI Min</span>
+         <input data-f="ti" type="number" value="${role.tiMin}" min="0" step="1000"
+           oninput="updateRoleField(${ri},'tiMin',+this.value)">
+         <span class="rh-label">TI Max</span>
+         <input data-f="ti" type="number" value="${role.tiMax}" min="0" step="1000"
+           oninput="updateRoleField(${ri},'tiMax',+this.value)">`
+      : `<span class="rh-label">TI</span>
+         <input data-f="ti" type="number" value="${role.ti}" min="0" step="1000"
+           oninput="updateRoleField(${ri},'ti',+this.value)">`;
+
+    // Compute FTE hint
+    const hintText = A > 0
+      ? `${(role.hc * (1 - A / 2)).toFixed(1)} FTE full · ${(role.hc * (A / 2)).toFixed(1)} FTE ramping`
+      : '';
+
+    const metricsHtml = role.metrics.map((m, mi) => buildMetricRowHTML(ri, mi, role, m)).join('');
+
+    const nMetrics = role.metrics.length;
+    const chartH   = nMetrics === 1 ? 380 : nMetrics === 2 ? 290 : 255;
+    html += `
+<div class="role-card" id="role-card-${ri}" style="--role-primary:${role.color};--chart-h:${chartH}px">
+  <div class="role-header" onclick="toggleRole(${ri})">
+    <span class="role-color-swatch" style="background:${role.color}"></span>
+    <div class="rh-inputs">
+      <input data-f="name" type="text" value="${role.name}" placeholder="Role Name"
+             oninput="updateRoleField(${ri},'name',this.value)" onclick="event.stopPropagation()">
+      <span class="rh-label">HC</span>
+      <input data-f="hc" type="number" value="${role.hc}" min="1" max="10000"
+             oninput="updateRoleField(${ri},'hc',+this.value)" onclick="event.stopPropagation()">
+      <span class="rh-label">Base</span>
+      <input data-f="base" type="number" value="${role.base}" min="0" step="1000"
+             oninput="updateRoleField(${ri},'base',+this.value)" onclick="event.stopPropagation()">
+      ${tiFields.replace(/oninput=/g, 'onclick="event.stopPropagation()" oninput=')}
+      <span class="rh-sep"></span>
+      <span class="rh-label">Attr%</span>
+      <input data-f="attr" type="number" min="0" max="100" step="1" value="${role.attrition || 0}"
+             onclick="event.stopPropagation()" oninput="updateRoleField(${ri},'attrition',+this.value)">
+      <span class="rh-label">Ramp mo.</span>
+      <input data-f="ramp" type="number" min="0" max="18" step="1" value="${role.rampMonths || 3}"
+             onclick="event.stopPropagation()" oninput="updateRoleField(${ri},'rampMonths',+this.value)">
+      <span class="adjust-hint" id="ramp-hint-${ri}">${hintText}</span>
+    </div>
+    <div class="rh-actions">
+      <button class="btn-secondary btn-sm" onclick="event.stopPropagation();addMetric(${ri})">+ Metric</button>
+      ${appState.roles.length > 1 ? `<button class="btn-danger btn-sm" onclick="event.stopPropagation();removeRole(${ri})">✕</button>` : ''}
+      <button class="btn-secondary btn-sm" onclick="event.stopPropagation();toggleRole(${ri})" style="min-width:28px">${isOpen ? '▲' : '▼'}</button>
+    </div>
+  </div>
+  <div class="role-body" style="display:${isOpen ? 'block' : 'none'}">
+    ${metricsHtml}
+  </div>
+</div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// Live FTE hint update (no DOM rebuild — focus-preserving)
+function updateRampHint(ri) {
+  const hint = document.getElementById(`ramp-hint-${ri}`);
+  if (!hint) return;
+  const role = appState.roles[ri];
+  const A    = (role.attrition || 0) / 100;
+  hint.textContent = A > 0
+    ? `${(role.hc * (1 - A / 2)).toFixed(1)} FTE full · ${(role.hc * (A / 2)).toFixed(1)} FTE ramping`
+    : '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════════
+function renderAll() {
+  renderRoles();
+  renderChartGrid();
+  renderResults();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SAVE / LOAD
+// ═══════════════════════════════════════════════════════════════
+const STORAGE_KEY = 'sg_cost_models';
+function getSavedModels() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; } }
+function saveModel(name, snap)  { const m = getSavedModels(); m[name] = snap; localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); }
+function deleteModel(name)      { const m = getSavedModels(); delete m[name]; localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); }
+
+function populateSavedModelsDropdown() {
+  const names   = Object.keys(getSavedModels()).sort();
+  const opts    = names.map(n => `<option value="${n}">${n}</option>`).join('');
+  document.getElementById('saved-models-select').innerHTML =
+    '<option value="">— Saved Models —</option>' + opts;
+  const planBSel = document.getElementById('planb-select');
+  if (planBSel) planBSel.innerHTML =
+    '<option value="">— Compare Plan B —</option>' + opts;
+}
+
+function openSaveDialog()  { document.getElementById('save-model-name').value = ''; document.getElementById('save-dialog').style.display = 'flex'; setTimeout(() => document.getElementById('save-model-name').focus(), 50); }
+function closeSaveDialog() { document.getElementById('save-dialog').style.display = 'none'; }
+
+function confirmSaveModel() {
+  const name = document.getElementById('save-model-name').value.trim();
+  if (!name) { alert('Please enter a model name.'); return; }
+  const snap = JSON.parse(JSON.stringify(appState));
+  snap.openRoles = [...(appState.openRoles || new Set([0]))];
+  saveModel(name, snap);
+  populateSavedModelsDropdown();
+  document.getElementById('saved-models-select').value = name;
+  closeSaveDialog();
+}
+function loadSelectedModel()   { const name = document.getElementById('saved-models-select').value; if (!name) return; const snap = getSavedModels()[name]; if (snap) applySnapshot(snap); }
+function deleteSelectedModel() { const name = document.getElementById('saved-models-select').value; if (!name) return; if (!confirm(`Delete model "${name}"?`)) return; deleteModel(name); populateSavedModelsDropdown(); }
+
+function applySnapshot(snapshot) {
+  appState.method    = snapshot.method || 'auc';
+  // Backward-compat: apply attrition/ramp defaults for older saved models
+  appState.roles     = (snapshot.roles || []).map(r => ({
+    attrition: 0, rampMonths: 3,  // defaults first
+    ...r                                         // snapshot values override
+  }));
+  if (!appState.roles.length) appState.roles = [makeRole(1,'Role',ROLE_COLORS[0].primary,10,100000,80000,64000,96000,[makeMetric(100,0,150,250,2.5,100,25,'Revenue')])];
+  appState.overlays  = snapshot.overlays || {};
+  appState.openRoles = new Set(snapshot.openRoles || [0]);
+  appState.globalRev = snapshot.globalRev || 100;
+  document.getElementById('g-rev').value = appState.globalRev;
+  appState.mcSims    = snapshot.mcSims || 2000;
+  const simsEl = document.getElementById('g-sims');
+  if (simsEl) simsEl.value = appState.mcSims;
+  appState.nextId    = snapshot.nextId || appState.roles.length + 1;
+  document.getElementById('btn-auc-g').classList.toggle('active', appState.method === 'auc');
+  document.getElementById('btn-mc-g').classList.toggle('active',  appState.method === 'mc');
+  document.body.classList.toggle('mc-mode', appState.method === 'mc');
+  renderAll();
+}
+
+function exportModelJSON() {
+  const snap = JSON.parse(JSON.stringify(appState));
+  snap.openRoles = [...(appState.openRoles || new Set([0]))];
+  delete snap.snapshot;
+  delete snap.planB;
+  snap._version = '1.0'; snap._exported = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(snap, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `SG_CostModel_${(appState.roles[0]?.name || 'Model').replace(/[^a-zA-Z0-9\-_ ]/g,'').replace(/ /g,'_')}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importModelJSON(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try { const snap = JSON.parse(e.target.result); if (!snap.roles) { alert('Invalid model file.'); return; } applySnapshot(snap); }
+    catch(err) { alert('Could not parse file: ' + err.message); }
+  };
+  reader.readAsText(file); event.target.value = '';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════════════
+function setMethod(m) {
+  appState.method = m;
+  document.getElementById('btn-auc-g').classList.toggle('active', m === 'auc');
+  document.getElementById('btn-mc-g').classList.toggle('active',  m === 'mc');
+  document.body.classList.toggle('mc-mode', m === 'mc');
+  const floatRerun = document.getElementById('float-rerun');
+  if (floatRerun) floatRerun.style.display = m === 'mc' ? '' : 'none';
+  const tip = document.getElementById('method-tooltip');
+  if (tip) tip.textContent = m === 'auc'
+    ? 'AUC (Area Under the Curve): Deterministic. Weights the pay curve against a normal performance distribution — same inputs always produce the same result.'
+    : 'Monte Carlo: Runs N random simulations per rep. Results vary slightly between runs. Unlocks P10–P90 percentile bands.';
+  renderRoles(); renderChartGrid(); renderResults();
+}
+
+function updateGlobal() {
+  appState.globalRev = parseFloat(document.getElementById('g-rev').value) || 100;
+  const sims = document.getElementById('g-sims');
+  if (sims) appState.mcSims = parseInt(sims.value) || 2000;
+  renderResults();
+}
+
+function updateRoleField(ri, field, val) {
+  appState.roles[ri][field] = val;
+  // Hint updates in-place without DOM rebuild — focus-preserving
+  if (['attrition','rampMonths','hc'].includes(field)) updateRampHint(ri);
+  renderResults();
+}
+
+function updateMetricField(ri, mi, field, val) {
+  appState.roles[ri].metrics[mi][field] = val;
+  if (field === 'weight') {
+    const badge = document.getElementById(`w-badge-${ri}-${mi}`);
+    if (badge) badge.textContent = `${val}%`;
+  }
+  const key = `${ri}_${mi}`;
+  const openType = openPanels[key];
+  if (openType) {
+    const inner = document.getElementById(`side-panel-inner-${ri}-${mi}`);
+    if (inner) inner.innerHTML = buildPanelContent(ri, mi, openType);
+  }
+  renderResults();
+}
+
+function toggleRole(ri) {
+  if (appState.openRoles.has(ri)) appState.openRoles.delete(ri);
+  else appState.openRoles.add(ri);
+  renderRoles(); renderChartGrid();
+}
+
+function addRole() {
+  const ri = appState.roles.length;
+  const rc = ROLE_COLORS[ri % ROLE_COLORS.length];
+  appState.roles.push(makeRole(appState.nextId++, 'New Role', rc.primary, 10, 100000, 80000, 64000, 96000, [
+    makeMetric(100, 0, 150, 250, 2.5, 100, 25, 'Revenue')
+  ]));
+  appState.openRoles.add(ri);
+  renderRoles(); renderChartGrid(); renderResults();
+}
+
+function removeRole(ri) {
+  if (appState.roles.length <= 1) return;
+  appState.roles[ri].metrics.forEach((_, mi) => {
+    const key = `${ri}_${mi}`;
+    if (chartMap.has(key)) { chartMap.get(key).destroy(); chartMap.delete(key); }
+    delete openPanels[key]; delete distVisible[key]; delete histVisible[key]; delete appState.overlays[key];
+  });
+  appState.openRoles.delete(ri);
+  appState.roles.splice(ri, 1);
+  const updated = new Set();
+  appState.openRoles.forEach(i => updated.add(i > ri ? i - 1 : i));
+  appState.openRoles = updated;
+  renderRoles(); renderChartGrid(); renderResults();
+}
+
+function addMetric(ri) {
+  const role = appState.roles[ri];
+  const newW = Math.max(0, 100 - role.metrics.reduce((s, m) => s + m.weight, 0));
+  role.metrics.push(makeMetric(newW, 0, 150, 250, 1.0, 100, 25, 'Metric'));
+  appState.openRoles.add(ri);
+  renderRoles(); renderChartGrid(); renderResults();
+}
+
+function removeMetric(ri, mi) {
+  if (appState.roles[ri].metrics.length <= 1) return;
+  const key = `${ri}_${mi}`;
+  if (chartMap.has(key)) { chartMap.get(key).destroy(); chartMap.delete(key); }
+  delete openPanels[key]; delete distVisible[key]; delete histVisible[key]; delete appState.overlays[key];
+  appState.roles[ri].metrics.splice(mi, 1);
+  appState.openRoles.add(ri);
+  renderRoles(); renderChartGrid(); renderResults();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAN A / B COMPARISON
+// ═══════════════════════════════════════════════════════════════
+
+// Compute results for an arbitrary snapshot (used for Plan B and export)
+function computeResultsForSnapshot(snapshot) {
+  const rev     = snapshot.globalRev || 100;
+  const method  = snapshot.method    || 'auc';
+  const nSims   = appState.mcSims;
+  const totalHC = snapshot.roles.reduce((s, r) => s + r.hc, 0);
+  const roleResults = snapshot.roles.map(role => {
+    const base = method === 'mc' ? calcRoleMC(role, rev, nSims) : calcRoleAUC(role, rev);
+    base.adjusted = calcRoleAdjustedCost(role, rev, totalHC, method);
+    return base;
+  });
+  const grandHC   = totalHC;
+  const grandInc  = roleResults.reduce((s, r) => s + r.totalInc,  0);
+  const grandComp = roleResults.reduce((s, r) => s + r.totalComp, 0);
+  return {
+    roleResults, grandHC, grandInc, grandComp,
+    blendedIncCoS: rev > 0 ? grandInc  / rev : 0,
+    blendedCCoS:   rev > 0 ? grandComp / rev : 0
+  };
+}
+
+function loadPlanB() {
+  const name = document.getElementById('planb-select').value;
+  if (!name) return;
+  const models   = getSavedModels();
+  const snapshot = models[name];
+  if (!snapshot) return;
+
+  appState.planB = {
+    name,
+    globalRev: snapshot.globalRev || 100,
+    method:    snapshot.method    || 'auc',
+    roles: (snapshot.roles || []).map(r => ({
+      attrition: 0, rampMonths: 3, ...r
+    }))
+  };
+
+  document.getElementById('planb-badge').textContent   = `Plan B: ${name}`;
+  document.getElementById('planb-badge').style.display  = 'inline-block';
+  document.getElementById('planb-clear').style.display  = 'inline-block';
+  const mw = document.getElementById('planb-method-wrap');
+  if (mw) {
+    mw.style.display = 'flex';
+    const m = appState.planB.method || 'auc';
+    document.getElementById('planb-btn-auc').classList.toggle('active', m !== 'mc');
+    document.getElementById('planb-btn-mc').classList.toggle('active',  m === 'mc');
+  }
+
+  renderChartGrid();
+  renderCompareTable();
+}
+
+function setPlanBMethod(method) {
+  if (!appState.planB) return;
+  appState.planB.method = method;
+  document.getElementById('planb-btn-auc').classList.toggle('active', method !== 'mc');
+  document.getElementById('planb-btn-mc').classList.toggle('active',  method === 'mc');
+  renderResults();
+  renderCompareTable();
+}
+
+function clearPlanB() {
+  appState.planB = null;
+  document.getElementById('planb-badge').style.display = 'none';
+  document.getElementById('planb-clear').style.display = 'none';
+  document.getElementById('planb-select').value = '';
+  const mw = document.getElementById('planb-method-wrap');
+  if (mw) mw.style.display = 'none';
+  renderChartGrid();
+  renderCompareTable();
+}
+
+// ── Inline Snapshot ──
+function freezeSnapshot() {
+  appState.snapshot = {
+    name: 'Snapshot',
+    globalRev: appState.globalRev,
+    method: appState.method,
+    roles: JSON.parse(JSON.stringify(appState.roles)),
+    timestamp: Date.now()
+  };
+  // Update floating pill UI
+  document.getElementById('float-freeze').style.display = 'none';
+  const txt = document.getElementById('float-snapshot-text');
+  txt.textContent = '\u2744 Frozen ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('float-snapshot-badge').style.display = '';
+
+  // Camera flash effect: fade in 200ms → fade out 400ms
+  const overlay = document.getElementById('flash-overlay');
+  overlay.style.transition = 'opacity 0.2s ease-in';
+  overlay.style.opacity = '0.8';
+  setTimeout(() => {
+    overlay.style.transition = 'opacity 0.4s ease-out';
+    overlay.style.opacity = '0';
+  }, 200);
+
+  renderChartGrid();
+}
+
+function clearSnapshot() {
+  appState.snapshot = null;
+  document.getElementById('float-freeze').style.display = '';
+  document.getElementById('float-snapshot-badge').style.display = 'none';
+  renderChartGrid();
+  renderResults();
+}
+
+function rerunMC() {
+  // Clear cached MC histogram samples so they regenerate with new random draws
+  Object.keys(mcHistCache).forEach(k => delete mcHistCache[k]);
+  renderChartGrid();
+  renderResults();
+}
+
+// Returns an <td> element string for a delta value
+function deltaCell(a, b, fmt, higherIsBad = true) {
+  const d = b - a;
+  if (Math.abs(d) < 0.001) return `<td class="compare-delta-zero">—</td>`;
+  const cssClass = (d > 0 && higherIsBad) || (d < 0 && !higherIsBad)
+    ? 'compare-delta-pos' : 'compare-delta-neg';
+  const sign = d > 0 ? '+' : '';
+  return `<td class="${cssClass}">${sign}${fmt(d)}</td>`;
+}
+
+function renderCompareTable() {
+  const section = document.getElementById('compare-section');
+  if (!section) return;
+  const compareTarget = appState.planB || appState.snapshot;
+  if (!compareTarget) { section.style.display = 'none'; return; }
+
+  section.style.display = 'block';
+
+  const resA = computeResults();
+  const resB = computeResultsForSnapshot(compareTarget);
+
+  const header = document.getElementById('compare-header');
+  if (header) {
+    const targetName = appState.planB
+      ? appState.planB.name
+      : ('Snapshot @ ' + new Date(appState.snapshot.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    const chevron = header.querySelector('.section-collapse-chevron');
+    header.textContent = `Plan Comparison: Current Model vs. ${targetName}`;
+    if (chevron) header.appendChild(chevron);
+    else header.insertAdjacentHTML('beforeend', '<span class="section-collapse-chevron">▼</span>');
+  }
+
+  const fMD  = n => (Math.abs(n) < 1e-9 ? '$0.00M' : (n < 0 ? '−$' : '$') + Math.abs(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}) + 'M');
+  const fPD  = n => n.toFixed(1) + 'pp';
+  const dash = '<td style="color:#BBBBBB;text-align:center">—</td>';
+
+  const nRoles = Math.min(resA.roleResults.length, resB.roleResults.length);
+  let rows = '';
+
+  for (let ri = 0; ri < nRoles; ri++) {
+    const roleA = appState.roles[ri];
+    const roleB = compareTarget.roles[ri];
+    const rrA   = resA.roleResults[ri];
+    const rrB   = resB.roleResults[ri];
+
+    // ── Role-level summary row ──────────────────────────────────────────────
+    rows += `<tr>
+      <td class="role-hd-cell" style="background:${roleA.color}">${roleA.name}</td>
+      <td>${f2(rrA.totalInc)}</td><td>${f2(rrB.totalInc)}</td>
+      ${deltaCell(rrA.totalInc, rrB.totalInc, fMD, true)}
+      <td>${fPct(rrA.incCoS)}</td><td>${fPct(rrB.incCoS)}</td>
+      ${deltaCell(rrA.incCoS * 100, rrB.incCoS * 100, fPD, true)}
+      <td>${f2(rrA.totalComp)}</td><td>${f2(rrB.totalComp)}</td>
+      ${deltaCell(rrA.totalComp, rrB.totalComp, fMD, true)}
+      <td>${fPct(rrA.cCoS)}</td><td>${fPct(rrB.cCoS)}</td>
+      ${deltaCell(rrA.cCoS * 100, rrB.cCoS * 100, fPD, true)}
+    </tr>`;
+
+    // ── Per-metric sub-rows ─────────────────────────────────────────────────
+    const nMetrics = Math.max(
+      roleA.metrics ? roleA.metrics.length : 0,
+      roleB && roleB.metrics ? roleB.metrics.length : 0
+    );
+
+    for (let mi = 0; mi < nMetrics; mi++) {
+      const mA  = roleA.metrics ? roleA.metrics[mi] : null;
+      const mB  = roleB && roleB.metrics ? roleB.metrics[mi] : null;
+      const mrA = rrA.metrics ? rrA.metrics[mi] : null;
+      const mrB = rrB.metrics ? rrB.metrics[mi] : null;
+
+      const wA = mA ? (mA.weight || 0) : 0;
+      const wB = mB ? (mB.weight || 0) : 0;
+      if (wA === 0 && wB === 0) continue;
+
+      const metricName = (mA && mA.name) ? mA.name : (mB && mB.name ? mB.name : `Metric ${mi + 1}`);
+      const incA = mrA ? mrA.totalInc : null;
+      const incB = mrB ? mrB.totalInc : null;
+      const revA = resA.globalRev || appState.globalRev || 100;
+      const revB = resB.globalRev || compareTarget.globalRev || 100;
+      const cosA = (incA != null && revA > 0) ? (incA / revA) : null;
+      const cosB = (incB != null && revB > 0) ? (incB / revB) : null;
+
+      const dIncCell = (incA != null && incB != null) ? deltaCell(incA, incB, fMD, true) : dash;
+      const dCosCell = (cosA != null && cosB != null) ? deltaCell(cosA * 100, cosB * 100, fPD, true) : dash;
+
+      rows += `<tr class="compare-metric-row">
+        <td class="compare-metric-name">${metricName}</td>
+        <td>${incA != null ? f2(incA) : '—'}</td>
+        <td>${incB != null ? f2(incB) : '—'}</td>
+        ${dIncCell}
+        <td>${cosA != null ? fPct(cosA) : '—'}</td>
+        <td>${cosB != null ? fPct(cosB) : '—'}</td>
+        ${dCosCell}
+        ${dash}${dash}${dash}${dash}${dash}${dash}
+      </tr>`;
+    }
+  }
+
+  // ── Grand total row ────────────────────────────────────────────────────────
+  rows += `<tr class="total-row">
+    <td><strong>TOTAL</strong></td>
+    <td>${f2(resA.grandInc)}</td><td>${f2(resB.grandInc)}</td>
+    ${deltaCell(resA.grandInc, resB.grandInc, fMD, true)}
+    <td>${fPct(resA.blendedIncCoS)}</td><td>${fPct(resB.blendedIncCoS)}</td>
+    ${deltaCell(resA.blendedIncCoS * 100, resB.blendedIncCoS * 100, fPD, true)}
+    <td>${f2(resA.grandComp)}</td><td>${f2(resB.grandComp)}</td>
+    ${deltaCell(resA.grandComp, resB.grandComp, fMD, true)}
+    <td>${fPct(resA.blendedCCoS)}</td><td>${fPct(resB.blendedCCoS)}</td>
+    ${deltaCell(resA.blendedCCoS * 100, resB.blendedCCoS * 100, fPD, true)}
+  </tr>`;
+
+  document.getElementById('compare-tbody').innerHTML = rows;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PPT EXPORT (pptxgenjs — browser-side, no Python, no JSON)
+// ═══════════════════════════════════════════════════════════════
+
+const SG_LOGO_B64 = "image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHUAAAAfCAYAAADZa4KAAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAdtSREBVGhD7Zt/iBRlGMfHtLLU7NDzup2Zu/LH7cyYWkj4j3ERRtAPodAIKiKigwq9m5ndmT2j9m5nF42MIIig9A8JLPqFQb+FNKiIfpGl/TBKvJ1Zz+ynaeplXs/z3vO+zu7O3p5K5x3MBx523+d53vfene++z/vOLCfFnH0GJWlSSVOt0vyWwUoLDHnjzsbGqZQaMx4o6coTUWJWmq/LP1KXmLFMUVMPl4lnKIXfW6dfTGGpT5EuKCUTtm+o/zJh4fW32Q3TKRwz1vAN5eBJMeXPoQRPoFAkgaG+wYXdBuWa3DFjhZKhvsoFDfTmHeSuS6DL61kfQ/27qMluUVe383F8o2V7cfbMeZQaM5rsniudz4VAI3dN+i+f1VTSlIfDfYYzX1MOUdeY0QJW2+NcAFhtN5K7DFB6YqCrT4XFEmYoR/DV11uOgy3rn9cye09r62RfV17hOTRMzGghxAHLStI55Gb0t81aWNLVvnAOGpRbz5+TUClNjIHvv03OmAbl/Hvu85PKPSwpZvTgF5+LgviJaTP4ChRmqBv3tEqTKaUMnsNWNJ2M0XwtcROlxIwmXAA0XKmwB/4lRNHVf0q6fBel1oTnDxrSeSDshJJ2STuFyrHtO6fkXHNRNv1gglxnBc+2W9k8stnIbykn55gLck6nTs3TBv9WzumaT83/HS5Ipfl6Ik0pdeF9QNDatzY51363kEkNcvNc+0Shu7uRwgIe73E67yOXwHPsZ3mcXGXAmAM8zs1zrA8ozPBc81BZPGPvoZAg76Q+Dueg5V1rA4UZ+bS9lsfIVUXesd4Kj4EGc3yNwozss0qpynHs7ynMqIwP5Vi/ULiKsJBogSHvpNCI2Du3cQ7vS65qspY1s2pSrn2cwoKcY28OxQfILThTUXNp83XuB5ECFk9bz1GYUXCsIzyn0vJu14eUVldUGHdvuG+ZuanfKS1SVDSvO+VQyimLCuW2GBaV3COmqMs/1e2bd+3H+GTIFQmIciI88TWmKVOIMVJRYYVsJVcZvK/npD4hVxkw/r0sDvMgF6O9vX1S3rH7qMkYTlQv07WMx8wVKy4gt5R1V7dwv/fQQ5cxX0hUbMOX7Rl8n3fNl7CNiD6u/R65agIHmSfDgqLt09X1FK5L0Wi6lvfz5zVeQe5qCrZt8Imh9TrWO9nOTvH8EclZq66kiZ/IZ1Jf4Pt82nyfwozTWam5jLWcwtDf+igcA6G6YV8VR34vkzqO/p6U9SC5pLWZ+xvChgKjfzhR82nrKzY+fJnJJUCxKMZWa/lKtT/k73MZezHrAJyMh8yxxErm9F82q0kIoqmf8PdoeO9KaTXZB/e0or+u1n/AkEtbGyonlkuvFo+ccmm7hL48fLCcaS7iORRmnKmoK1eunFhwrd3heN4x/6Ewlt5/0QfbhUauqgvqudZS9A8nKvf32quvIpeg4Ni3s3EyKXbRapVfmPcW1gGIikeJKgQxlEew7c9XxakXLdDk36JOscU2eWFgJPxw7p7QQ/+6eG7nNXxicLr8mtxi4lg6C679tsjJrL6BUkYsKu6jXio1By3b0XEhhcvoda01fCwv1bUMfdCfrdSCYz7LkoCca+1A47nwhVuA/mHLr9vFDoX5dOozcgnwS4sxqFY+tsOirs1kGnrtziWi7XZeijm8jZVGfK6KSre/rXkpE0RTD5NLehHuMX1DPR4WayS2N6nWvzvpWLz4XCh1f1ITV+3PQ5M0d2EbYi/wiUcZ6wSc6Z7qOc7dsFI2UfPkCuhOX41ty+oQBzo4tN3KkgAQ8AHuJ9ewosJKb+OxQtruITf0MR/lfl72K/dUvFYiJ5VaiD7ehs9Xc0/F30KZKLp8J7kEvt7yaaVwUYa/zsAkyp5A1YRPqsrSQxeTt+Fe7jbWAciuWnUR98MFYPtYWNSw5bu6mlk8ovzy029HR4e4WJWGcQ5Uj11ROWg9jikej4VFDRuF4TPZm6LizFzzTUqrWX7RIMwucFSs8vTr68p+FIaakUDO67DXlpXkkqYcCwzlC7ivG/aevQo8XFQe8WFS6zAGB4dbuI8lh4DDxAH0w+s32D4TUZHeTOeScI7npo5GPRSA/c6C++qhUszy7AEol9dRmFFPVKQn3XUXVA22T6PBOEe9jHUHhRlRouK9M5RXVnqRyjjLqRA1MNTdbLXB6ZdcMeOdP7XEDL76gqS8NWibOpNCMeMZP6kuF2X1dMxQDxR19SkaLmYsERiyB4eeg4GuDHDB8BQMe+fRkq4ehtc/uLF2KC9sP8xpED/FxYxj9iXVm2F//o4LG+jqNgrFjHfwNMxPyrjyyR0z3oHSfD+KiuKSK+ZsAPvk00wI2EN3StJ55D5l+nRlHYxxgo0F98DkjjkbFA15CwoRtkBL/Ar7ZKY/qSwozpWVvS3TGw4kZ0xDw0eCcG/b1qcp7bB/Pl/ZF+2zZinyUWvMKAIr6+UocU7ZNPnYTiP+H5sxw34QA/bEzZFi1TF2O5Rsvp6GihmL7GtqmlKcJy/yNeWlqHtS8H1Z0hIPlOZe0jhY818zhpCk/wAMLlW+779KiwAAAABJRU5ErkJggg==";
+
+// Role color palette — no # prefix (pptxgenjs requirement)
+const PPT_ROLE_COLORS = [
+  '16213F',  // Navy
+  '4C9A9C',  // Teal
+  '205D92',  // Blue
+  '27394F',  // DarkBlue
+  '8D0801',  // DarkRed
+  '857874',  // Slate
+];
+
+function pptRoleColor(ri) {
+  return PPT_ROLE_COLORS[ri % PPT_ROLE_COLORS.length];
+}
+
+function pptFM(v)   { return v == null ? '—' : '$' + v.toFixed(2) + 'M'; }
+function pptFPct(v) { return v == null ? '—' : (v * 100).toFixed(1) + '%'; }
+
+function addSlideHeader(slide, title, roleColor) {
+  const barColor = roleColor || '16213F';
+  slide.addShape(PptxGenJS.shapes.RECTANGLE, {
+    x: 0, y: 0, w: 13.33, h: 0.65,
+    fill: { color: barColor }, line: { color: barColor }
+  });
+  slide.addText(title, {
+    x: 0.35, y: 0, w: 11.5, h: 0.65,
+    fontSize: 20, bold: true, color: 'FFFFFF',
+    fontFace: 'Calibri', valign: 'middle', margin: 0
+  });
+  slide.addImage({ data: SG_LOGO_B64, x: 12.15, y: 0.17, w: 0.9, h: 0.24 });
+}
+
+function addSlideFooter(slide) {
+  slide.addText('© 2026 SalesGlobe  |  Sales Compensation Cost Estimator', {
+    x: 0, y: 7.25, w: 13.33, h: 0.25,
+    fontSize: 8, color: '857874', fontFace: 'Calibri',
+    align: 'center', valign: 'middle'
+  });
+}
+
+function addTitleSlide(pres, roles) {
+  const slide = pres.addSlide();
+  slide.background = { color: '16213F' };
+  slide.addImage({ data: SG_LOGO_B64, x: 5.67, y: 0.6, w: 2.0, h: 0.53 });
+  slide.addShape(PptxGenJS.shapes.RECTANGLE, {
+    x: 3.5, y: 1.35, w: 6.33, h: 0.04,
+    fill: { color: '4C9A9C' }, line: { color: '4C9A9C' }
+  });
+  slide.addText('Sales Compensation\nCost Model', {
+    x: 1.5, y: 1.6, w: 10.33, h: 2.2,
+    fontSize: 44, bold: true, color: 'FFFFFF',
+    fontFace: 'Calibri', align: 'center', valign: 'middle'
+  });
+  const roleNames = roles.map(r => r.name).join('  ·  ');
+  const date = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  slide.addText(`${roleNames}\n${appState.method.toUpperCase()} Method  ·  ${date}`, {
+    x: 1.5, y: 3.9, w: 10.33, h: 1.0,
+    fontSize: 14, color: '4C9A9C', fontFace: 'Calibri',
+    align: 'center', valign: 'middle'
+  });
+  slide.addShape(PptxGenJS.shapes.RECTANGLE, {
+    x: 0, y: 7.1, w: 13.33, h: 0.4,
+    fill: { color: '4C9A9C' }, line: { color: '4C9A9C' }
+  });
+  slide.addText('CONFIDENTIAL  ·  PREPARED BY SALESGLOBE', {
+    x: 0, y: 7.1, w: 13.33, h: 0.4,
+    fontSize: 9, bold: true, color: 'FFFFFF', fontFace: 'Calibri',
+    align: 'center', valign: 'middle', charSpacing: 3
+  });
+}
+
+function addSummarySlide(pres, res) {
+  const slide = pres.addSlide();
+  slide.background = { color: 'FFFFFF' };
+  addSlideHeader(slide, 'Executive Summary');
+  addSlideFooter(slide);
+
+  const rev = appState.globalRev;
+  const kpis = [
+    { label: 'Total Headcount', value: String(res.grandHC),        sub: `${appState.roles.length} roles` },
+    { label: 'Total Incentive', value: pptFM(res.grandInc),        sub: `vs $${rev}M revenue` },
+    { label: 'Incentive CoS%',  value: pptFPct(res.blendedIncCoS), sub: 'Inc / Revenue' },
+    { label: 'Comp CoS%',       value: pptFPct(res.blendedCCoS),   sub: 'Total Comp / Revenue' },
+  ];
+  const cardW = 2.8, cardH = 1.3, cardY = 0.85, startX = 0.53;
+  kpis.forEach((kpi, i) => {
+    const cx = startX + i * (cardW + 0.2);
+    slide.addShape(PptxGenJS.shapes.RECTANGLE, {
+      x: cx, y: cardY, w: cardW, h: cardH,
+      fill: { color: 'F5F4F3' }, line: { color: 'DDDDDD' }
+    });
+    slide.addShape(PptxGenJS.shapes.RECTANGLE, {
+      x: cx, y: cardY, w: cardW, h: 0.06,
+      fill: { color: '16213F' }, line: { color: '16213F' }
+    });
+    slide.addText(kpi.value, {
+      x: cx, y: cardY + 0.1, w: cardW, h: 0.75,
+      fontSize: 30, bold: true, color: '16213F',
+      fontFace: 'Calibri', align: 'center', valign: 'middle'
+    });
+    slide.addText(kpi.label, {
+      x: cx, y: cardY + 0.82, w: cardW, h: 0.26,
+      fontSize: 11, color: '857874', fontFace: 'Calibri',
+      align: 'center', bold: true
+    });
+  });
+
+  const roles  = appState.roles;
+  const rr     = res.roleResults;
+  const anyAdj = rr.some(r => r.adjusted);
+  const colW   = anyAdj
+    ? [2.2, 0.55, 0.9, 0.75, 0.75, 1.0, 0.9, 0.9, 0.9]
+    : [2.5, 0.6,  1.0, 0.9,  1.0,  1.1, 1.0];
+  const headers = anyAdj
+    ? ['Role', 'HC', 'TI ($M)', 'Inc CoS%', 'CCoS%', 'Adj. Revenue', 'Adj. Inc CoS%', 'Adj. CCoS%', 'Δ CCoS% (pp)']
+    : ['Role', 'HC', 'TI ($M)', 'Inc ($M)', 'Inc CoS%', 'Total Comp ($M)', 'CCoS%'];
+
+  const headerRow = headers.map((h, ci) => ({
+    text: h,
+    options: { fill: { color: '16213F' }, color: 'FFFFFF', bold: true,
+               align: ci === 0 ? 'left' : 'center', fontSize: 10, fontFace: 'Calibri' }
+  }));
+
+  const tableRows = [headerRow];
+  roles.forEach((role, ri) => {
+    const r   = rr[ri];
+    const adj = r.adjusted;
+    const rc  = pptRoleColor(ri);
+    let cells;
+    if (anyAdj) {
+      cells = [
+        role.name, String(role.hc), pptFM(r.totalInc),
+        pptFPct(r.incCoS), pptFPct(r.cCoS),
+        adj ? pptFM(adj.adjustedRoleRev)  : '—',
+        adj ? pptFPct(adj.adjustedIncCoS) : '—',
+        adj ? pptFPct(adj.adjustedCCoS)   : '—',
+        adj ? (adj.deltaCCoSpp > 0 ? '+' : '') + adj.deltaCCoSpp.toFixed(2) + 'pp' : '—'
+      ];
+    } else {
+      cells = [role.name, String(role.hc), pptFM(r.totalInc),
+               pptFM(r.totalInc), pptFPct(r.incCoS), pptFM(r.totalComp), pptFPct(r.cCoS)];
+    }
+    tableRows.push(cells.map((val, ci) => ({
+      text: String(val),
+      options: {
+        fill:  { color: ci === 0 ? rc : (ri % 2 === 0 ? 'FFFFFF' : 'F5F4F3') },
+        color: ci === 0 ? 'FFFFFF' : (anyAdj && ci === cells.length - 1 && adj && adj.deltaCCoSpp > 0.1 ? '8D0801' : '000000'),
+        bold: ci === 0, align: ci === 0 ? 'left' : 'center', fontSize: 10, fontFace: 'Calibri'
+      }
+    })));
+  });
+
+  const totals = anyAdj
+    ? ['TOTAL', String(res.grandHC), '—', pptFPct(res.blendedIncCoS), pptFPct(res.blendedCCoS),
+       res.grandAdjRev    ? pptFM(res.grandAdjRev)        : '—',
+       res.grandAdjIncCoS ? pptFPct(res.grandAdjIncCoS)   : '—',
+       res.grandAdjCCoS   ? pptFPct(res.grandAdjCCoS)     : '—', '']
+    : ['TOTAL', String(res.grandHC), '—', pptFM(res.grandInc),
+       pptFPct(res.blendedIncCoS), pptFM(res.grandComp), pptFPct(res.blendedCCoS)];
+
+  tableRows.push(totals.map((val, ci) => ({
+    text: val,
+    options: { fill: { color: 'EDEAE8' }, color: '000000', bold: true,
+               align: ci === 0 ? 'left' : 'center', fontSize: 10, fontFace: 'Calibri' }
+  })));
+
+  slide.addTable(tableRows, {
+    x: 0.53, y: 2.35, w: colW.reduce((s, w) => s + w, 0), colW,
+    border: { pt: 0.5, color: 'DDDDDD' }, autoPage: false
+  });
+}
+
+function addRoleSlide(pres, role, ri, rr) {
+  const slide = pres.addSlide();
+  slide.background = { color: 'FFFFFF' };
+  const rc = pptRoleColor(ri);
+  addSlideHeader(slide, role.name, rc);
+  addSlideFooter(slide);
+
+  const kpis = [
+    `HC: ${role.hc}`,
+    `TI: $${(role.ti || ((role.tiMin + role.tiMax) / 2)).toLocaleString()}`,
+    `Inc: ${pptFM(rr.totalInc)}`,
+    `Inc CoS%: ${pptFPct(rr.incCoS)}`,
+    `CCoS%: ${pptFPct(rr.cCoS)}`,
+  ];
+  if (rr.adjusted) {
+    kpis.push(`Adj. CCoS%: ${pptFPct(rr.adjusted.adjustedCCoS)} (${rr.adjusted.deltaCCoSpp > 0 ? '+' : ''}${rr.adjusted.deltaCCoSpp.toFixed(2)}pp)`);
+  }
+  slide.addText(kpis.join('   |   '), {
+    x: 0.35, y: 0.68, w: 12.63, h: 0.3,
+    fontSize: 10, color: '27394F', fontFace: 'Calibri', bold: false
+  });
+
+  const activeMetrics = role.metrics.map((m, mi) => ({ m, mi })).filter(({ m }) => m.weight > 0);
+  const chartCount = Math.min(activeMetrics.length, 3);
+  const chartW = chartCount > 0 ? (12.43 / chartCount) - 0.15 : 12.43;
+  const chartH = 3.2, chartY = 1.05;
+
+  activeMetrics.slice(0, 3).forEach(({ m, mi }, idx) => {
+    const cx  = 0.35 + idx * (chartW + 0.15);
+    const key = `${ri}_${mi}`;
+    const chartInst = chartMap.get(key);
+    slide.addText(m.name || `Metric ${mi + 1}`, {
+      x: cx, y: chartY, w: chartW, h: 0.28,
+      fontSize: 11, bold: true, color: rc, fontFace: 'Calibri'
+    });
+    if (chartInst) {
+      try {
+        slide.addImage({ data: chartInst.toBase64Image('image/png', 1.0),
+                         x: cx, y: chartY + 0.3, w: chartW, h: chartH });
+      } catch(e) {
+        slide.addText('[Chart unavailable]', {
+          x: cx, y: chartY + 0.3, w: chartW, h: chartH,
+          fontSize: 11, color: '857874', fontFace: 'Calibri', align: 'center', valign: 'middle'
+        });
+      }
+    }
+  });
+
+  const paramHeaders = [
+    { text: 'Metric',      w: 1.8 }, { text: 'Weight%',     w: 0.75 },
+    { text: 'Threshold%',  w: 0.95 }, { text: 'Excellence%', w: 0.95 },
+    { text: 'Upside%',     w: 0.75 }, { text: 'PER',         w: 0.6  },
+    { text: 'Avg QA%',     w: 0.75 }, { text: 'SD%',         w: 0.6  },
+    { text: 'Avg Payout%', w: 1.0  },
+  ];
+  const colW = paramHeaders.map(h => h.w);
+
+  const headerRow = paramHeaders.map(h => ({
+    text: h.text,
+    options: { fill: { color: rc }, color: 'FFFFFF', bold: true,
+               align: h.text === 'Metric' ? 'left' : 'center', fontSize: 9, fontFace: 'Calibri' }
+  }));
+
+  const paramRows = [headerRow];
+  activeMetrics.forEach(({ m, mi }, idx) => {
+    const mrResult  = rr.metrics[role.metrics.indexOf(m)];
+    const avgPayout = mrResult ? (mrResult.avgTIPct * 100).toFixed(1) + '%' : '—';
+    const vals = [
+      m.name || `Metric ${mi + 1}`,
+      `${m.weight}%`, `${m.threshold}%`, `${m.excellence}%`,
+      `${m.upside}%`, String(m.per || m.finalSlope || '—'),
+      `${m.avgQA}%`, `${m.perfSD}%`, avgPayout
+    ];
+    paramRows.push(vals.map((val, ci) => ({
+      text: val,
+      options: { fill: { color: idx % 2 === 0 ? 'FFFFFF' : 'F5F4F3' }, color: '000000',
+                 align: ci === 0 ? 'left' : 'center', fontSize: 9, fontFace: 'Calibri' }
+    })));
+  });
+
+  slide.addTable(paramRows, {
+    x: 0.35, y: 4.55, w: colW.reduce((s, w) => s + w, 0), colW,
+    border: { pt: 0.5, color: 'DDDDDD' }
+  });
+}
+
+function addComparisonSlide(pres, res) {
+  if (!appState.planB) return;
+  const slide = pres.addSlide();
+  slide.background = { color: 'FFFFFF' };
+  addSlideHeader(slide, `Plan Comparison: Current  vs.  ${appState.planB.name}`);
+  addSlideFooter(slide);
+
+  const resB   = computeResultsForSnapshot(appState.planB);
+  const roles  = appState.roles;
+  const nRoles = Math.min(roles.length, resB.roleResults.length);
+  const colW   = [2.2, 1.0, 1.0, 0.85, 0.9, 0.9, 0.85, 1.0, 1.0, 0.85];
+  const headers = ['Role', 'A Inc ($M)', 'B Inc ($M)', 'Δ Inc', 'A CoS%', 'B CoS%', 'Δ CoS%', 'A Comp', 'B Comp', 'Δ Comp'];
+
+  const headerRow = headers.map((h, ci) => ({
+    text: h,
+    options: { fill: { color: '16213F' }, color: 'FFFFFF', bold: true,
+               align: ci === 0 ? 'left' : 'center', fontSize: 10, fontFace: 'Calibri' }
+  }));
+
+  const tableRows = [headerRow];
+  for (let ri = 0; ri < nRoles; ri++) {
+    const role = roles[ri];
+    const rA   = res.roleResults[ri];
+    const rB   = resB.roleResults[ri] || {};
+    const dInc  = (rB.totalInc  || 0) - (rA.totalInc  || 0);
+    const dComp = (rB.totalComp || 0) - (rA.totalComp || 0);
+    const dCoS  = (rB.incCoS    || 0) - (rA.incCoS    || 0);
+    const sign  = v => (v > 0 ? '+' : '');
+    const rc    = pptRoleColor(ri);
+    const vals  = [
+      role.name,
+      pptFM(rA.totalInc),  pptFM(rB.totalInc),  sign(dInc)  + pptFM(dInc),
+      pptFPct(rA.incCoS),  pptFPct(rB.incCoS),  sign(dCoS)  + (dCoS * 100).toFixed(2) + 'pp',
+      pptFM(rA.totalComp), pptFM(rB.totalComp), sign(dComp) + pptFM(dComp)
+    ];
+    tableRows.push(vals.map((val, ci) => {
+      const isDelta  = ci === 3 || ci === 6 || ci === 9;
+      const deltaVal = ci === 3 ? dInc : ci === 6 ? dCoS : ci === 9 ? dComp : 0;
+      return {
+        text: val,
+        options: {
+          fill:  { color: ci === 0 ? rc : (ri % 2 === 0 ? 'FFFFFF' : 'F5F4F3') },
+          color: ci === 0 ? 'FFFFFF'
+               : isDelta && deltaVal > 0.001  ? '8D0801'
+               : isDelta && deltaVal < -0.001 ? '4C9A9C'
+               : '000000',
+          bold: ci === 0 || isDelta, align: ci === 0 ? 'left' : 'center',
+          fontSize: 10, fontFace: 'Calibri'
+        }
+      };
+    }));
+  }
+
+  slide.addTable(tableRows, {
+    x: 0.35, y: 0.85, w: colW.reduce((s, w) => s + w, 0), colW,
+    border: { pt: 0.5, color: 'DDDDDD' }
+  });
+}
+
+function exportToPPTX() {
+  const pres   = new PptxGenJS();
+  pres.layout  = 'LAYOUT_WIDE';
+  pres.author  = 'SalesGlobe';
+  pres.company = 'SalesGlobe';
+  pres.title   = 'Sales Compensation Cost Model';
+
+  const res = computeResults();
+
+  addTitleSlide(pres, appState.roles);
+  addSummarySlide(pres, res);
+  appState.roles.forEach((role, ri) => addRoleSlide(pres, role, ri, res.roleResults[ri]));
+  if (appState.planB) addComparisonSlide(pres, res);
+
+  const slug    = (appState.roles[0]?.name || 'Model').replace(/[^a-zA-Z0-9 ]/g, '').replace(/ +/g, '_').slice(0, 30);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  pres.writeFile({ fileName: `SG_CompModel_${slug}_${dateStr}.pptx` });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEED PLANS — pre-baked demo models
+// Written once on first load; never overwrites a key that already exists.
+// ═══════════════════════════════════════════════════════════════
+const SEED_PLANS = {
+
+  '⚔️ Hunter Plan': {
+    method: 'auc', globalRev: 150, mcSims: 2000,
+    overlays: {}, openRoles: [0, 1], planB: null, nextId: 3,
+    roles: [
+      {
+        id: 1, name: 'Enterprise Hunter AE', color: '#16213F',
+        hc: 20, base: 120000, ti: 100000, tiMin: 65000, tiMax: 135000,
+        attrition: 0, rampMonths: 6,
+        metrics: [
+          { name: 'New ARR',   weight: 70, threshold: 70, excellence: 125, upside: 250, finalSlope: 3.0, avgQA: 100, perfSD: 28 },
+          { name: 'New Logos', weight: 30, threshold: 70, excellence: 120, upside: 200, finalSlope: 2.0, avgQA: 92,  perfSD: 32 }
+        ]
+      },
+      {
+        id: 2, name: 'Mid-Market Hunter AE', color: '#4C9A9C',
+        hc: 40, base: 80000, ti: 65000, tiMin: 42250, tiMax: 87750,
+        attrition: 0, rampMonths: 4,
+        metrics: [
+          { name: 'New ARR',             weight: 80, threshold: 70, excellence: 120, upside: 220, finalSlope: 2.5, avgQA: 100, perfSD: 25 },
+          { name: 'Pipeline Conv. Rate', weight: 20, threshold: 75, excellence: 120, upside: 160, finalSlope: 1.5, avgQA: 95,  perfSD: 22 }
+        ]
+      }
+    ]
+  },
+
+  '🌾 Farmer Plan': {
+    method: 'auc', globalRev: 150, mcSims: 2000,
+    overlays: {}, openRoles: [0, 1], planB: null, nextId: 3,
+    roles: [
+      {
+        id: 1, name: 'Sr. Account Manager', color: '#16213F',
+        hc: 20, base: 90000, ti: 55000, tiMin: 44000, tiMax: 66000,
+        attrition: 0, rampMonths: 3,
+        metrics: [
+          { name: 'Renewal ARR',   weight: 60, threshold: 85, excellence: 108, upside: 125, finalSlope: 1.0, avgQA: 103, perfSD: 14 },
+          { name: 'Expansion ARR', weight: 40, threshold: 75, excellence: 120, upside: 175, finalSlope: 2.0, avgQA: 90,  perfSD: 22 }
+        ]
+      },
+      {
+        id: 2, name: 'Account Manager', color: '#4C9A9C',
+        hc: 35, base: 70000, ti: 35000, tiMin: 28000, tiMax: 42000,
+        attrition: 0, rampMonths: 3,
+        metrics: [
+          { name: 'Renewal ARR',         weight: 70, threshold: 85, excellence: 108, upside: 125, finalSlope: 0.8, avgQA: 103, perfSD: 14 },
+          { name: 'Customer Health Sc.', weight: 30, threshold: 80, excellence: 105, upside: 118, finalSlope: 0.5, avgQA: 100, perfSD: 12 }
+        ]
+      }
+    ]
+  },
+
+  '📞 BDR Plan': {
+    method: 'auc', globalRev: 150, mcSims: 2000,
+    overlays: {}, openRoles: [0, 1], planB: null, nextId: 3,
+    roles: [
+      {
+        id: 1, name: 'Sr. BDR', color: '#205D92',
+        hc: 18, base: 58000, ti: 28000, tiMin: 19600, tiMax: 36400,
+        attrition: 0, rampMonths: 2,
+        metrics: [
+          { name: 'Qualified Opps', weight: 50, threshold: 70, excellence: 125, upside: 200, finalSlope: 1.5, avgQA: 100, perfSD: 28 },
+          { name: 'Pipeline $',     weight: 50, threshold: 70, excellence: 125, upside: 200, finalSlope: 1.5, avgQA: 95,  perfSD: 28 }
+        ]
+      },
+      {
+        id: 2, name: 'BDR', color: '#27394F',
+        hc: 45, base: 48000, ti: 22000, tiMin: 15400, tiMax: 28600,
+        attrition: 0, rampMonths: 2,
+        metrics: [
+          { name: 'Meetings / SQLs', weight: 60, threshold: 70, excellence: 125, upside: 175, finalSlope: 1.0, avgQA: 95, perfSD: 30 },
+          { name: 'Pipeline $',      weight: 40, threshold: 70, excellence: 120, upside: 175, finalSlope: 1.0, avgQA: 90, perfSD: 30 }
+        ]
+      }
+    ]
+  },
+
+  '🤝 CSM Plan': {
+    method: 'auc', globalRev: 150, mcSims: 2000,
+    overlays: {}, openRoles: [0, 1], planB: null, nextId: 3,
+    roles: [
+      {
+        id: 1, name: 'Sr. Customer Success Mgr', color: '#16213F',
+        hc: 20, base: 90000, ti: 30000, tiMin: 25500, tiMax: 34500,
+        attrition: 0, rampMonths: 4,
+        metrics: [
+          { name: 'Net Rev. Retention',  weight: 50, threshold: 90, excellence: 108, upside: 118, finalSlope: 0.8, avgQA: 103, perfSD: 10 },
+          { name: 'Expansion ARR',       weight: 30, threshold: 80, excellence: 120, upside: 160, finalSlope: 1.5, avgQA: 88,  perfSD: 22 },
+          { name: 'Customer Health Sc.', weight: 20, threshold: 85, excellence: 105, upside: 115, finalSlope: 0.5, avgQA: 100, perfSD: 12 }
+        ]
+      },
+      {
+        id: 2, name: 'Customer Success Mgr', color: '#4C9A9C',
+        hc: 35, base: 70000, ti: 22000, tiMin: 18700, tiMax: 25300,
+        attrition: 0, rampMonths: 4,
+        metrics: [
+          { name: 'Gross Rev. Retention', weight: 60, threshold: 90, excellence: 106, upside: 115, finalSlope: 0.5, avgQA: 103, perfSD: 10 },
+          { name: 'CSAT / NPS',           weight: 20, threshold: 80, excellence: 105, upside: 115, finalSlope: 0.4, avgQA: 100, perfSD: 12 },
+          { name: 'Time-to-Value',        weight: 20, threshold: 80, excellence: 110, upside: 130, finalSlope: 0.8, avgQA: 95,  perfSD: 15 }
+        ]
+      }
+    ]
+  }
+
+};
+
+function seedDemoPlans() {
+  const existing = getSavedModels();
+  Object.entries(SEED_PLANS).forEach(([name, snap]) => {
+    if (!existing[name]) saveModel(name, snap);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  appState.overlays  = {};
+  appState.openRoles = new Set([0]);
+  seedDemoPlans();
+  renderRoles();
+  renderChartGrid();
+  renderResults();
+  populateSavedModelsDropdown();
+});
+</script>
+</body>
+</html>
