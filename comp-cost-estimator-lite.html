@@ -360,6 +360,81 @@ body {
 .btn-clear-snap { background:transparent; color:var(--sg-grey); border:1px solid var(--sg-grey); border-radius:20px; padding:6px 14px; font-family:'Calibri',sans-serif; font-size:12px; cursor:pointer; }
 .btn-clear-snap:hover { color:var(--sg-darkred); border-color:var(--sg-darkred); }
 
+/* ── Add Measure / Add Role buttons ── */
+.btn-add {
+  background: transparent;
+  color: var(--sg-blue);
+  border: 1.5px dashed var(--sg-blue);
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-family: 'Calibri', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-add:hover { background: var(--sg-blue); color: #fff; }
+
+/* ── Upgrade modal ── */
+.upgrade-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+.upgrade-modal-overlay.open { display: flex; }
+.upgrade-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 32px 36px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  text-align: center;
+  position: relative;
+}
+.upgrade-modal-icon { font-size: 32px; margin-bottom: 12px; }
+.upgrade-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--sg-darkblue);
+  margin-bottom: 10px;
+}
+.upgrade-modal-body {
+  font-size: 14px;
+  color: var(--sg-grey);
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+.upgrade-modal-body a {
+  color: #E62B1E;
+  font-weight: 700;
+  text-decoration: none;
+}
+.upgrade-modal-body a:hover { text-decoration: underline; }
+.upgrade-modal-close {
+  background: var(--sg-navy);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 9px 24px;
+  font-family: 'Calibri', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.upgrade-modal-close:hover { background: var(--sg-darkblue); }
+.upgrade-modal-x {
+  position: absolute;
+  top: 10px; right: 14px;
+  background: none; border: none;
+  font-size: 18px; color: var(--sg-grey);
+  cursor: pointer; line-height: 1;
+}
+
 /* Comparison table */
 .snap-table { width:100%; border-collapse:collapse; font-family:'Calibri',sans-serif; font-size:13px; background:white; border-radius:6px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 .snap-table th { background:var(--sg-navy); color:white; padding:8px 12px; text-align:right; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; }
@@ -529,6 +604,10 @@ body {
         </div>
       </div>
 
+      <div style="padding: 10px 0 4px;">
+        <button class="btn-add" onclick="showUpgradeModal('measure')">+ Add Measure</button>
+      </div>
+
     </div><!-- /left-col -->
 
     <!-- RIGHT: Chart -->
@@ -542,6 +621,7 @@ body {
   <div class="snap-controls">
     <button class="btn-reset" onclick="resetModel()">↺ Reset</button>
     <button id="btn-snap" class="btn-snap" onclick="freezeSnapshot()">📸 Snapshot</button>
+    <button class="btn-add" onclick="showUpgradeModal('role')">+ Add Role</button>
     <button id="btn-clear-snap" class="btn-clear-snap" onclick="clearSnapshot()" style="display:none;">✕ Clear Snapshot</button>
   </div>
 
@@ -602,7 +682,7 @@ body {
   <!-- ── CTA Banner ── -->
   <div class="cta-banner">
     <div class="cta-text">
-      <div class="cta-headline">Want the full model?</div>
+      <div class="cta-headline">Want more detail?</div>
       <div class="cta-sub">Multi-role, multi-metric comp cost modeling with Plan A/B comparison, sensitivity analysis, and PowerPoint export.</div>
     </div>
     <div class="cta-buttons">
@@ -617,6 +697,20 @@ body {
   </footer>
 
 </div><!-- /page-wrap -->
+
+<!-- ── Upgrade Modal ── -->
+<div class="upgrade-modal-overlay" id="upgrade-modal-overlay" onclick="hideUpgradeModal(event)">
+  <div class="upgrade-modal">
+    <button class="upgrade-modal-x" onclick="hideUpgradeModal()">✕</button>
+    <div class="upgrade-modal-icon">📊</div>
+    <div class="upgrade-modal-title" id="upgrade-modal-title">Need multiple measures?</div>
+    <div class="upgrade-modal-body">
+      <a href="https://salesglobe.com/contact" target="_blank" rel="noopener">Contact SalesGlobe</a>
+      to discuss custom models for your organization.
+    </div>
+    <button class="upgrade-modal-close" onclick="hideUpgradeModal()">Got it</button>
+  </div>
+</div>
 
 <div id="flash-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;opacity:0;pointer-events:none;z-index:9999;transition:opacity 0.45s ease-out;"></div>
 
@@ -1032,6 +1126,22 @@ function update() {
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// UPGRADE MODAL
+// ═══════════════════════════════════════════════════════════════
+function showUpgradeModal(type) {
+  const title = document.getElementById('upgrade-modal-title');
+  title.textContent = type === 'measure'
+    ? 'Need multiple measures?'
+    : 'Need multiple roles?';
+  document.getElementById('upgrade-modal-overlay').classList.add('open');
+}
+
+function hideUpgradeModal(e) {
+  if (e && e.target !== document.getElementById('upgrade-modal-overlay')) return;
+  document.getElementById('upgrade-modal-overlay').classList.remove('open');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initChart();
   renderKPIs();
