@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Compensation Plan Cost Estimator - Lite — SalesGlobe</title>
+<meta name="description" content="Model the true cost of your sales compensation plan. Free interactive tool from SalesGlobe.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --sg-navy:      #16213F;
+  --sg-darkblue:  #27394F;
+  --sg-blue:      #205D92;
+  --sg-teal:      #4C9A9C;
+  --sg-yellow:    #F4D58D;
+  --sg-darkred:   #8D0801;
+  --sg-red:       #C0392B;
+  --sg-grey:      #857874;
+  --sg-lightgrey: #F5F4F3;
+  --sg-black:     #000000;
+  --sg-white:     #FFFFFF;
+  --sg-pagebg:    #EDEAE8;
+}
+
+body {
+  font-family: 'Calibri', 'Calibri Light', sans-serif;
+  background: var(--sg-pagebg);
+  color: var(--sg-black);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── Header ── */
+.sg-header {
+  background: var(--sg-navy);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  border-bottom: 3px solid #E62B1E;
+}
+.sg-wordmark {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+.sg-wordmark svg {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+.sg-header-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+.sg-header-title {
+  color: var(--sg-white);
+  font-size: 16px;
+  font-weight: 700;
+  flex: 1;
+  letter-spacing: 0.01em;
+}
+
+/* ── Page wrapper ── */
+.page-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 20px 0 20px;
+}
+
+/* ── Intro blurb ── */
+.intro-blurb {
+  color: var(--sg-grey);
+  font-size: 13px;
+  font-style: italic;
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+/* ── Main panel: two-column ── */
+.main-panel {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  background: var(--sg-white);
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.left-col {
+  width: 320px;
+  flex-shrink: 0;
+  border-right: 1px solid #eee;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+}
+
+.right-col {
+  flex: 1;
+  min-width: 0;
+  padding: 14px;
+  position: relative;
+  min-height: 320px;
+}
+
+.right-col canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── Section labels ── */
+.section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--sg-grey);
+  padding: 8px 0 4px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 6px;
+}
+.section-label:first-child {
+  padding-top: 0;
+}
+
+/* ── Param rows ── */
+.param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.param-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.param-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sg-darkblue);
+}
+
+
+.param-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.param-slider {
+  flex: 1;
+  height: 4px;
+  accent-color: var(--sg-blue);
+  cursor: pointer;
+}
+
+.param-num {
+  width: 58px;
+  padding: 3px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'Calibri', sans-serif;
+  color: var(--sg-black);
+  text-align: right;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.param-num:focus {
+  border-color: var(--sg-blue);
+  box-shadow: 0 0 0 2px rgba(32,93,146,0.18);
+}
+
+/* ── KPI Cards ── */
+.kpi-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.kpi-card {
+  flex: 1;
+  background: var(--sg-white);
+  border: 1.5px solid #ddd;
+  border-top: 4px solid var(--sg-blue);
+  border-radius: 6px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  min-width: 0;
+}
+
+.kpi-card.cost-green  { border-top-color: #27AE60; }
+.kpi-card.cost-yellow { border-top-color: #F39C12; }
+.kpi-card.cost-red    { border-top-color: var(--sg-red); }
+
+.kpi-val {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--sg-darkblue);
+  line-height: 1.1;
+}
+
+.kpi-lbl {
+  font-size: 12px;
+  color: var(--sg-grey);
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── CTA Banner ── */
+.cta-banner {
+  background: var(--sg-navy);
+  border-radius: 6px;
+  padding: 20px 28px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.cta-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.cta-headline {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--sg-white);
+  margin-bottom: 4px;
+}
+
+.cta-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.5;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.btn-cta-primary {
+  background: var(--sg-yellow);
+  color: var(--sg-navy);
+  border: none;
+  border-radius: 4px;
+  padding: 10px 20px;
+  font-family: 'Calibri', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: opacity 0.15s;
+}
+.btn-cta-primary:hover { opacity: 0.85; }
+
+.btn-cta-secondary {
+  background: transparent;
+  color: var(--sg-white);
+  border: 2px solid rgba(255,255,255,0.5);
+  border-radius: 4px;
+  padding: 9px 18px;
+  font-family: 'Calibri', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: border-color 0.15s;
+}
+.btn-cta-secondary:hover { border-color: rgba(255,255,255,0.85); }
+
+/* ── Footer ── */
+.sg-footer {
+  margin-top: 16px;
+  padding: 14px 0 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footer-left {
+  font-size: 12px;
+  color: var(--sg-grey);
+}
+
+.footer-right {
+  font-size: 12px;
+  color: var(--sg-grey);
+}
+
+.footer-right a {
+  color: var(--sg-blue);
+  text-decoration: none;
+}
+.footer-right a:hover { text-decoration: underline; }
+
+/* ── Team Bar ── */
+.team-bar {
+  display: flex;
+  gap: 16px;
+  background: var(--sg-white);
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  flex-wrap: wrap;
+}
+.team-field {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.team-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sg-grey);
+}
+.team-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Snapshot controls ── */
+.snap-controls { display:flex; align-items:center; gap:10px; padding:10px 0 4px; }
+.btn-reset { background:transparent; color:var(--sg-grey); border:1px solid var(--sg-grey); border-radius:20px; padding:6px 14px; font-family:'Calibri',sans-serif; font-size:12px; cursor:pointer; }
+.btn-reset:hover { color:var(--sg-darkblue); border-color:var(--sg-darkblue); }
+.btn-snap { background:var(--sg-navy); color:white; border:none; border-radius:20px; padding:7px 16px; font-family:'Calibri',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
+.btn-snap:hover { background:var(--sg-darkblue); }
+.btn-clear-snap { background:transparent; color:var(--sg-grey); border:1px solid var(--sg-grey); border-radius:20px; padding:6px 14px; font-family:'Calibri',sans-serif; font-size:12px; cursor:pointer; }
+.btn-clear-snap:hover { color:var(--sg-darkred); border-color:var(--sg-darkred); }
+
+/* Comparison table */
+.snap-table { width:100%; border-collapse:collapse; font-family:'Calibri',sans-serif; font-size:13px; background:white; border-radius:6px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+.snap-table th { background:var(--sg-navy); color:white; padding:8px 12px; text-align:right; font-size:12px; text-transform:uppercase; letter-spacing:0.04em; font-weight:700; }
+.snap-table th:first-child { text-align:left; }
+.snap-table td { padding:8px 12px; text-align:right; border-bottom:1px solid #eee; }
+.snap-table td:first-child { text-align:left; font-weight:600; color:var(--sg-darkblue); }
+.snap-table tr:last-child td { border-bottom:none; }
+.snap-table tr:nth-child(even) td { background:var(--sg-lightgrey); }
+
+/* ── Mobile responsive ── */
+@media (max-width: 768px) {
+  .sg-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .page-wrap { padding: 12px 12px 0 12px; }
+  .main-panel {
+    flex-direction: column;
+  }
+  .left-col {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+  }
+  .right-col {
+    min-height: 300px;
+  }
+  .kpi-row {
+    flex-direction: column;
+  }
+  .kpi-card {
+    width: 100%;
+  }
+  .cta-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .team-bar {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .team-field {
+    min-width: 0;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header class="sg-header">
+  <a class="sg-wordmark" href="https://salesglobe.com" target="_blank" rel="noopener">
+    <svg viewBox="0 0 225 60" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" overflow="hidden"><defs><clipPath id="clip0"><rect x="0" y="0" width="225" height="60"/></clipPath><image width="225" height="60" xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAOEAAAA8CAMAAACnzS25AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAACBUExURQAAAP////v7+/39/f////////39/f////////////7+/v7+/v////////////7+/v////7+/vz8/P////39/fz8/P////7+/v7+/v////////7+/v7+/v////39/f////////////z8/P39/f39/f////////39/f7+/v7+/v7+/rFiIGQAAAArdFJOUwAYSICvn3BAKIfP/7cQIO8I51C/eGCn39eXOPfHhP//MI9YmGhYUPrV8fky0LUSAAAACXBIWXMAAA9hAAAPYQGoP6dpAAAGuklEQVRoQ91a25qyOBBEEUERQUXFw86ov3t8/wfcVHUnHNXZb69CXYwkBJJKOtXdYQK/MZmG4SwK57GWR4ZksUwdVvNMq0eDdaTcLPKw0FvjwEJ5NbHZ6s0RINspqWUZx0US7w85i6He9x7JkXzSaK0VBvsNambjsNSsIr9lomVBEaLypCW/sSLBQ2+5tjDVuRZ8hojMQUtNnC/mRhxkcRyX4TZu2LBXmIBGeh3ccL99fX/ztqDaa71fmGHsl4mWapzLmQhqEz6K640jv2tJUTyiPjsg1wY+gYrZXsIpl9Xi+/vXND4b1nOUtIlPYCy60oJB9lTnaDALp7+bHzHN5Goul7z0CmtSeWopSE5WWI6nLcSnMOUrbhxYO2UrrzDlwI0RArF4RgRvzvsjnjMEZVv6qKV7jpye7qbb7xIpYQIpRybNqma9N6DQQD/Wyu/4bCeGaJAE66OvzlAZTmz2tOtttJOp9TrlF4Z/QCfN9huggq3ZDsmJ5P8eAfQtft2POroYGMhHcIN9/Ym/wwkvfEeXzVRcTGM+kJ3Uy4+9G+m1gcwioCFRsUBqtolqSlm5g5bt9jZ4xLiOei1I7hC9a+S6EQnJdwsbL9duTisIaOk3a6PBVWHIo9cWMFzCudEYpZkWPjLUbM1omvVSUyajgFWzHsPSxcd2oMLQ4KIKMcxQ/KGZ0BeeDqODP2zgIU8YlFoT0FnWgdEHhrhNXG4st49QxJI6DIvGIVm6kUVzDNOLWO8ww+AvVlUvtlWBye2E2+gsv4eztLImJelJTXiAYb4DONkJ2lZheLQvFp9cHVZcyQtXscNQzGazExKSCLFJGKHvBRvhZsV+WFSs6cq/NoPJUxAwFtWZtsArkRdP3T4s0aoxogGGjU63poj1LubSaQZiYp23TboRy20z5BzwDGLCoIRTgybmtU/zIxsEDHsurbBbopNcKBKw6cSiGZo3xm9gzcNa+nuGtK6GSsFGjzrD66detBlilDu9Q5PGhlCG2DT1GvYY1lmEC00byDj0rsTSljZOwWSGc9iR1ZoBhscQ4F4Qo7w62cTwezLeYgixuNj+uCVBRBjGeFzmC6OdoZsGTczH3/+YP+YND62rMeH27qUTVjhmtk9M0wmia7VmgKGAT1i7yUvhaC4v+L1xEgywK1oMYdd1+oM9AZNDE4H2ZU2pYTCczdgqWddQzyLhvSigsAuvYj/B9ZkCpFrznmFws1vjiDIWiGrtRmwXyDFEQQwRwKjx9prhVVzMAEMMyvByGUXTVuwp/9BZm02RRaVBoBJR0jF9YGhyUOWIoRTmd4NaN2IMo8ewPimDtLQZ6jL0GWLxl8ZSnAdOq7vMxvpp1+nFeemk5AJjYulQDnFMNylaM8BwGQN26xkNkwnEFEHNQd2N2MqIY3huFvh2GAuamNcyY+dWwsUC3TjxxxJy2eyZt+Aq1km8PvOmDwQNzJODaM0Aw9pwLOiIMPdobTUKFs+zoBbDApNgvS3oMqFFE7yWARU0DCxaWoo7KiPuu0UHHV8vSCoap5q4s3FCtOYDw3mEeaPjx2xzyCoCeJL22GJIRdTYjAGe27d4LacYRtBjiI7dzrNy08RwKG6kML9PY0YZRmps2KfgTGOcS9FF9IyOxFtwu5wvaVXGWwo1TYR9X8v4ccJ2kUnC8HM+g4dEfldlPJf4kPtZGT7wIooxGNJb2IUxk5/XRvjj74eNdhszmLv51cl2l40m4ASGAnQtTlYgC+3CDkKkDcNX4CGus4MsVKOJrHv9Yt7nCUxtBwY//Ab8kCAUMD1RZ3SLMA+B1rxlWLjUJM3Vf0ooJlCv0GHYyD7SXC2x0eTIFw0xvHSW6Uff8XmsaMB0BArqkgrcgGa8ZWiGJsda6co+V1e5o6AuwyCzL3VP1U0Wsho9hjD/1sb8MW5hdAi3fG1ixNmOKlhrAZUKNEK1QP1hcHtG99I9BmSPcLZ4SBYETPQJA/vQ+hnuFmWdBtgm9n5w1orYLhBsO291MzrQq7eODscGVbV8t6LEhiskj5vU/DGFxup7jKaGDeAY7Wst8BXThnMaxKyfVPmGZD5zDlcOUwxql2dW0n+OLxA/GUQZdP5JY1SYPLhT87cRgO/gFyk9kBwrEHR1DoXHBpuEe4rP9sdU1VtBvVXp5kP0fabL7Jx7+wOGpsvHq1wwKB5yJMXDMC9hk65r2Q9Ds7hcWdf/4suUB5D/iFJUu91CYvBDJ66x51w+Itbk+h0GDvx9QlYfm7zAyfsEY12+STDy0xjSROMRbJDdxjEaU15RxOHMqcsRmrMfx+r9RwTBv+Vxk/p2v9jmAAAAAElFTkSuQmCC" preserveAspectRatio="none" id="img1"></image></defs><g clip-path="url(#clip0)"><use width="100%" height="100%" xlink:href="#img1" fill="none"></use></g></svg>
+  </a>
+  <div class="sg-header-divider"></div>
+  <div class="sg-header-title">Sales Compensation Plan Cost Estimator - Lite</div>
+
+</header>
+
+<div class="page-wrap">
+
+  <!-- ── Intro blurb ── -->
+  <p class="intro-blurb">
+    Adjust the sliders to model how your sales compensation plan design affects expected incentive cost across your team.
+    Results update instantly using SalesGlobe's AUC (Area Under the Curve) methodology.
+  </p>
+
+  <!-- ── Team Bar ── -->
+  <div class="team-bar">
+    <div class="team-field">
+      <label class="team-label">Headcount</label>
+      <div class="team-input-row">
+        <input type="range" class="param-slider" id="sl-hc" min="1" max="500" step="1" value="50" oninput="syncSlider('hc',this.value)">
+        <input type="number" class="param-num" id="num-hc" min="1" max="500" step="1" value="50" oninput="syncNum('hc',this.value)">
+      </div>
+    </div>
+    <div class="team-field">
+      <label class="team-label">Total Target Comp ($000s)</label>
+      <div class="team-input-row">
+        <input type="range" class="param-slider" id="sl-ttc" min="50" max="500" step="5" value="200" oninput="syncSlider('ttc',this.value)">
+        <input type="number" class="param-num" id="num-ttc" min="50" max="500" step="5" value="200" oninput="syncNum('ttc',this.value)">
+      </div>
+    </div>
+    <div class="team-field">
+      <label class="team-label">Pay Mix (TI % of TTC)</label>
+      <div class="team-input-row">
+        <input type="range" class="param-slider" id="sl-payMix" min="5" max="60" step="5" value="25" oninput="syncSlider('payMix',this.value)">
+        <input type="number" class="param-num" id="num-payMix" min="5" max="60" step="5" value="25" oninput="syncNum('payMix',this.value)">
+      </div>
+    </div>
+    <div class="team-field">
+      <label class="team-label">Avg Annual Quota per Rep ($M)</label>
+      <div class="team-input-row">
+        <input type="range" class="param-slider" id="sl-avgQuota" min="0.1" max="10.0" step="0.1" value="1.5" oninput="syncSlider('avgQuota',this.value)">
+        <input type="number" class="param-num" id="num-avgQuota" min="0.1" max="10.0" step="0.1" value="1.5" oninput="syncNum('avgQuota',this.value)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main two-column panel ── -->
+  <div class="main-panel">
+
+    <!-- LEFT: Inputs -->
+    <div class="left-col">
+
+      <div class="section-label">Pay Curve Design</div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">Threshold %</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-threshold" min="0" max="100" step="1" value="50" oninput="syncSlider('threshold',this.value)">
+          <input type="number" class="param-num" id="num-threshold" min="0" max="100" step="1" value="50" oninput="syncNum('threshold',this.value)">
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">Excellence %</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-excellence" min="100" max="200" step="1" value="150" oninput="syncSlider('excellence',this.value)">
+          <input type="number" class="param-num" id="num-excellence" min="100" max="200" step="1" value="150" oninput="syncNum('excellence',this.value)">
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">TI Multiple at Excellence (Leverage)</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-leverage" min="1.0" max="5.0" step="0.1" value="2.5" oninput="syncSlider('leverage',this.value)">
+          <input type="number" class="param-num" id="num-leverage" min="1.0" max="5.0" step="0.1" value="2.5" oninput="syncNum('leverage',this.value)">
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">Post-Excellence Rate (Slope)</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-finalSlope" min="0" max="5" step="0.1" value="1.0" oninput="syncSlider('finalSlope',this.value)">
+          <input type="number" class="param-num" id="num-finalSlope" min="0" max="5" step="0.1" value="1.0" oninput="syncNum('finalSlope',this.value)">
+        </div>
+      </div>
+
+      <div class="section-label">Performance Assumptions</div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">Avg Quota Attainment %</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-avgQA" min="50" max="150" step="1" value="100" oninput="syncSlider('avgQA',this.value)">
+          <input type="number" class="param-num" id="num-avgQA" min="50" max="150" step="1" value="100" oninput="syncNum('avgQA',this.value)">
+        </div>
+      </div>
+
+      <div class="param-row">
+        <div class="param-label-row">
+          <span class="param-label">Performance Std Dev %</span>
+        </div>
+        <div class="param-input-row">
+          <input type="range" class="param-slider" id="sl-perfSD" min="5" max="50" step="1" value="25" oninput="syncSlider('perfSD',this.value)">
+          <input type="number" class="param-num" id="num-perfSD" min="5" max="50" step="1" value="25" oninput="syncNum('perfSD',this.value)">
+        </div>
+      </div>
+
+    </div><!-- /left-col -->
+
+    <!-- RIGHT: Chart -->
+    <div class="right-col">
+      <canvas id="mainChart"></canvas>
+    </div>
+
+  </div><!-- /main-panel -->
+
+  <!-- ── Snapshot Controls ── -->
+  <div class="snap-controls">
+    <button class="btn-reset" onclick="resetModel()">↺ Reset</button>
+    <button id="btn-snap" class="btn-snap" onclick="freezeSnapshot()">📸 Snapshot</button>
+    <button id="btn-clear-snap" class="btn-clear-snap" onclick="clearSnapshot()" style="display:none;">✕ Clear Snapshot</button>
+  </div>
+
+  <!-- ── KPI Cards ── -->
+  <div class="kpi-row">
+    <div class="kpi-card" id="card-cost">
+      <div class="kpi-val" id="kpi-expectedPct">—</div>
+      <div class="kpi-lbl">Expected Plan Cost</div>
+    </div>
+    <div class="kpi-card" style="border-top-color: var(--sg-teal);">
+      <div class="kpi-val" id="kpi-incCos">—</div>
+      <div class="kpi-lbl">Incentive CoS %</div>
+    </div>
+    <div class="kpi-card" style="border-top-color: var(--sg-darkblue);">
+      <div class="kpi-val" id="kpi-totalCost">—</div>
+      <div class="kpi-lbl">Total Incentive Cost</div>
+    </div>
+    <div class="kpi-card" style="border-top-color: var(--sg-grey);">
+      <div class="kpi-val" id="kpi-totalProd">—</div>
+      <div class="kpi-lbl">Total Productivity</div>
+    </div>
+  </div>
+
+  <!-- ── Snapshot Comparison Table ── -->
+  <div id="snap-compare" style="display:none; margin:12px 0;">
+    <table class="snap-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Snapshot</th>
+          <th>Current</th>
+          <th>Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Expected Plan Cost</td>
+          <td id="snap-expPct">—</td>
+          <td id="curr-expPct">—</td>
+          <td id="delta-expPct">—</td>
+        </tr>
+        <tr>
+          <td>Incremental CoS %</td>
+          <td id="snap-incCos">—</td>
+          <td id="curr-incCos">—</td>
+          <td id="delta-incCos">—</td>
+        </tr>
+        <tr>
+          <td>Total Inc Cost</td>
+          <td id="snap-totalCost">—</td>
+          <td id="curr-totalCost">—</td>
+          <td id="delta-totalCost">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── CTA Banner ── -->
+  <div class="cta-banner">
+    <div class="cta-text">
+      <div class="cta-headline">Want the full model?</div>
+      <div class="cta-sub">Multi-role, multi-metric comp cost modeling with Plan A/B comparison, sensitivity analysis, and PowerPoint export.</div>
+    </div>
+    <div class="cta-buttons">
+      <a class="btn-cta-primary" href="https://salesglobe.com/contact" target="_blank" rel="noopener">Contact SalesGlobe</a>
+      <a class="btn-cta-secondary" href="https://salesglobe-tm.github.io/CostModeling/comp-cost-estimator-v2.html" target="_blank" rel="noopener">See Full Tool</a>
+    </div>
+  </div>
+
+  <!-- ── Footer ── -->
+  <footer class="sg-footer">
+    <div class="footer-left">© 2025 SalesGlobe. All rights reserved.</div>
+    <div class="footer-right">Built on SalesGlobe's AUC compensation costing methodology. <a href="https://salesglobe.com" target="_blank" rel="noopener">Learn more</a></div>
+  </footer>
+
+</div><!-- /page-wrap -->
+
+<div id="flash-overlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:white;opacity:0;pointer-events:none;z-index:9999;transition:opacity 0.45s ease-out;"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SNAPSHOT STATE
+// ═══════════════════════════════════════════════════════════════
+let snapshot = null; // null | { state: {}, results: {} }
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+const state = {
+  headcount:  50,
+  ttc:        200,   // Total Target Comp per rep ($000s)
+  payMix:      25,   // TI as % of TTC (pay mix %)
+
+  threshold:   50,   // % quota
+  excellence: 150,   // % quota
+  leverage:    2.5,  // multiple of TI (2.5x = 250% max payout)
+  finalSlope:  1.0,  // PER (post-excellence rate)
+  avgQA:      100,   // average quota attainment %
+  perfSD:      25,   // performance std dev %
+  avgQuota:    1.5,  // avg annual quota per rep ($M)
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MATH ENGINE (ported verbatim from comp-cost-estimator-v2.html)
+// ═══════════════════════════════════════════════════════════════
+function normPDF(x, mean, sd) {
+  if (sd <= 0) return x === mean ? 1 : 0;
+  const z = (x - mean) / sd;
+  return Math.exp(-0.5 * z * z) / (sd * Math.sqrt(2 * Math.PI));
+}
+
+function payCurvePayout(att, threshold, excellence, upside, finalSlope) {
+  const t = threshold / 100, e = excellence / 100, u = upside / 100, s = finalSlope;
+  if (att <= t) return 0;
+  if (att <= 1.0) return (att - t) / (1.0 - t);
+  if (att <= e)   return 1.0 + (att - 1.0) * (u - 1.0) / (e - 1.0);
+  return u + (att - e) * s;
+}
+
+function aucExpectedPayout(threshold, excellence, upside, finalSlope, avgQA, perfSD) {
+  const mean = avgQA / 100, sd = perfSD / 100;
+  const n    = 201;                     // 1% steps, 0% → 200%
+  const step = 2.0 / (n - 1);
+  const buckets = [];
+  for (let i = 0; i < n; i++) buckets.push(i * step);
+  const raw   = buckets.map(a => normPDF(a, mean, sd));
+  const total = raw.reduce((s,v) => s+v, 0);
+  if (total === 0) return payCurvePayout(mean, threshold, excellence, upside, finalSlope);
+  let w = 0;
+  for (let i = 0; i < buckets.length; i++)
+    w += (raw[i] / total) * payCurvePayout(buckets[i], threshold, excellence, upside, finalSlope);
+  return w;
+}
+
+function buildPayCurveData() {
+  const points = [];
+  for (let i = 0; i <= 220; i++) {
+    const att = i / 100;
+    const payout = payCurvePayout(att, state.threshold, state.excellence, state.leverage * 100, state.finalSlope) * 100;
+    points.push({ x: i, y: Math.round(payout * 10) / 10 });
+  }
+  return points;
+}
+
+function buildDistData() {
+  const mean = state.avgQA / 100, sd = state.perfSD / 100;
+  const pts = [];
+  for (let i = 0; i <= 200; i += 5)
+    pts.push({ x: i, y: Math.round(normPDF(i / 100, mean, sd) * 100 * 1000) / 1000 });
+  return pts;
+}
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPUTE
+// ═══════════════════════════════════════════════════════════════
+function compute() {
+  // Derived from TTC + Pay Mix
+  const tiPerPerson   = state.ttc * (state.payMix / 100);        // $000s
+  const totalTI       = tiPerPerson * state.headcount;            // $000s
+
+  const expectedPct = aucExpectedPayout(
+    state.threshold, state.excellence, state.leverage * 100,
+    state.finalSlope, state.avgQA, state.perfSD
+  );                                                              // e.g. 1.18 = 118%
+  const totalCost   = totalTI * expectedPct;                     // $000s
+
+  // ICoS: incentive cost as % of expected revenue generated by the team
+  // Expected revenue = avg quota × headcount × avg attainment (avgQA%)
+  const totalExpectedRevenue = state.avgQuota * state.headcount * (state.avgQA / 100) * 1000; // $M → $000s
+  const incCoS = totalCost / totalExpectedRevenue;
+
+  return { expectedPct, totalCost, totalTI, incCoS };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════════════════════════════
+function fmtDollars(val000s) {
+  const val = val000s * 1000;
+  if (val >= 1e9)  return '$' + (val / 1e9).toFixed(2) + 'B';
+  if (val >= 1e6)  return '$' + (val / 1e6).toFixed(2) + 'M';
+  if (val >= 1000) return '$' + (val / 1000).toFixed(1) + 'K';
+  return '$' + Math.round(val);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHART
+// ═══════════════════════════════════════════════════════════════
+let chart = null;
+
+function initChart() {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  const curveData = buildPayCurveData();
+  const distData  = buildDistData();
+
+  chart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Pay Curve',
+          data: curveData,
+          type: 'line',
+          borderColor: '#205D92',
+          backgroundColor: hexToRgba('#205D92', 0.08),
+          borderWidth: 2.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0,
+          yAxisID: 'y',
+          order: 2,
+        },
+        {
+          label: 'Performance Distribution',
+          data: distData,
+          type: 'line',
+          borderColor: '#C0392B',
+          backgroundColor: 'transparent',
+          borderWidth: 1.8,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.4,
+          yAxisID: 'y2',
+          order: 1,
+        },
+        {
+          label: 'Snapshot',
+          data: [],
+          type: 'line',
+          borderColor: hexToRgba('#205D92', 0.75),
+          backgroundColor: hexToRgba('#205D92', 0.06),
+          borderWidth: 2,
+          borderDash: [5, 4],
+          pointRadius: 0,
+          fill: true,
+          tension: 0,
+          yAxisID: 'y',
+          order: 3,
+          hidden: true,
+        },
+        {
+          label: 'Snapshot Dist.',
+          data: [],
+          type: 'line',
+          borderColor: hexToRgba('#C0392B', 0.7),
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderDash: [3, 3],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.4,
+          yAxisID: 'y2',
+          order: 4,
+          hidden: true,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 0 },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            font: { family: 'Calibri', size: 12 },
+            boxWidth: 20,
+            padding: 12,
+          }
+        },
+        tooltip: { enabled: false },
+        annotation: undefined,
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: 0,
+          max: 200,
+          title: { display: true, text: 'Quota Attainment %', font: { family: 'Calibri', size: 12 } },
+          ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y: {
+          type: 'linear',
+          min: 0,
+          max: 300,
+          position: 'left',
+          title: { display: true, text: 'Payout % of TI', font: { family: 'Calibri', size: 12 } },
+          ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y2: {
+          type: 'linear',
+          min: 0,
+          position: 'right',
+          title: { display: true, text: 'Distribution Density', font: { family: 'Calibri', size: 11 } },
+          ticks: { font: { family: 'Calibri', size: 10 } },
+          grid: { drawOnChartArea: false },
+        }
+      }
+    }
+  });
+}
+
+function updateChart() {
+  if (!chart) return;
+  chart.data.datasets[0].data = buildPayCurveData();
+  chart.data.datasets[1].data = buildDistData();
+  chart.update('none');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER KPI CARDS
+// ═══════════════════════════════════════════════════════════════
+function renderKPIs() {
+  const { expectedPct, totalCost, incCoS } = compute();
+
+  // Expected Plan Cost card + traffic-light color
+  const pctVal = expectedPct * 100;
+  document.getElementById('kpi-expectedPct').textContent = pctVal.toFixed(1) + '% of TI';
+  const card = document.getElementById('card-cost');
+  card.classList.remove('cost-green','cost-yellow','cost-red');
+  if      (pctVal < 105) card.classList.add('cost-green');
+  else if (pctVal <= 120) card.classList.add('cost-yellow');
+  else                   card.classList.add('cost-red');
+
+  // Incremental CoS
+  document.getElementById('kpi-incCos').textContent = (incCoS * 100).toFixed(1) + '%';
+
+  // Total $ Cost
+  document.getElementById('kpi-totalCost').textContent = fmtDollars(totalCost);
+
+  // Total Productivity = avg quota × avg attainment × headcount
+  const totalProd = state.avgQuota * (state.avgQA / 100) * state.headcount; // $M
+  const prodVal = totalProd >= 1000
+    ? '$' + (totalProd / 1000).toFixed(1) + 'B'
+    : '$' + totalProd.toFixed(1) + 'M';
+  document.getElementById('kpi-totalProd').textContent = prodVal;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT SYNC
+// ═══════════════════════════════════════════════════════════════
+const fieldMap = {
+  hc:         { stateKey: 'headcount',  parse: Number,        fmt: v => String(Math.round(v)) },
+  ttc:        { stateKey: 'ttc',        parse: Number,        fmt: v => '$' + Math.round(v) + 'k' },
+  payMix:     { stateKey: 'payMix',     parse: Number,        fmt: v => Math.round(v) + '%' },
+  threshold:  { stateKey: 'threshold',  parse: Number,        fmt: v => Math.round(v) + '%' },
+  excellence: { stateKey: 'excellence', parse: Number,        fmt: v => Math.round(v) + '%' },
+  leverage:   { stateKey: 'leverage',   parse: Number,        fmt: v => parseFloat(v).toFixed(1) + 'x' },
+  finalSlope: { stateKey: 'finalSlope', parse: Number,        fmt: v => parseFloat(v).toFixed(1) + '×' },
+  avgQA:      { stateKey: 'avgQA',      parse: Number,        fmt: v => Math.round(v) + '%' },
+  perfSD:     { stateKey: 'perfSD',     parse: Number,        fmt: v => Math.round(v) + '%' },
+  avgQuota:   { stateKey: 'avgQuota',   parse: Number,        fmt: v => '$' + parseFloat(v).toFixed(1) + 'M' },
+};
+
+function syncSlider(field, rawVal) {
+  const { stateKey, parse } = fieldMap[field];
+  const num = document.getElementById('num-' + field);
+  num.value = rawVal;
+  state[stateKey] = parse(rawVal);
+  update();
+}
+
+function syncNum(field, rawVal) {
+  const { stateKey, parse } = fieldMap[field];
+  const sl = document.getElementById('sl-' + field);
+  const v = parseFloat(rawVal);
+  if (isNaN(v)) return;
+  const min = parseFloat(sl.min), max = parseFloat(sl.max);
+  const clamped = Math.min(max, Math.max(min, v));
+  sl.value = clamped;
+  state[stateKey] = parse(clamped);
+  update();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SNAPSHOT
+// ═══════════════════════════════════════════════════════════════
+const DEFAULTS = {
+  headcount: 50, ttc: 200, payMix: 25,
+  threshold: 50, excellence: 150, leverage: 2.5, finalSlope: 1.0,
+  avgQA: 100, perfSD: 25, avgQuota: 1.5,
+};
+
+function resetModel() {
+  Object.assign(state, DEFAULTS);
+  // Sync all sliders and number inputs to defaults
+  for (const [field, { stateKey }] of Object.entries(fieldMap)) {
+    const sl  = document.getElementById('sl-'  + field);
+    const num = document.getElementById('num-' + field);
+    if (sl)  sl.value  = state[stateKey];
+    if (num) num.value = state[stateKey];
+  }
+  clearSnapshot();
+  update();
+}
+
+function triggerFlash() {
+  const ov = document.getElementById('flash-overlay');
+  ov.style.transition = 'none';
+  ov.style.opacity = '0.75';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    ov.style.transition = 'opacity 0.45s ease-out';
+    ov.style.opacity = '0';
+  }));
+}
+
+function freezeSnapshot() {
+  snapshot = {
+    state:     { ...state },
+    results:   compute(),
+    curveData: buildPayCurveData(),
+    distData:  buildDistData(),
+  };
+  triggerFlash();
+  document.getElementById('btn-clear-snap').style.display = 'inline-block';
+  // Show frozen ghost curves on chart
+  chart.data.datasets[2].data   = snapshot.curveData;
+  chart.data.datasets[2].hidden = false;
+  chart.data.datasets[3].data   = snapshot.distData;
+  chart.data.datasets[3].hidden = false;
+  chart.update('none');
+  renderSnapshot();
+}
+
+function clearSnapshot() {
+  snapshot = null;
+  document.getElementById('snap-compare').style.display = 'none';
+  document.getElementById('btn-clear-snap').style.display = 'none';
+  chart.data.datasets[2].data   = [];
+  chart.data.datasets[2].hidden = true;
+  chart.data.datasets[3].data   = [];
+  chart.data.datasets[3].hidden = true;
+  chart.update('none');
+}
+
+function renderSnapshot() {
+  if (!snapshot) return;
+  const curr = compute();
+  const s    = snapshot.results;
+  document.getElementById('snap-compare').style.display = 'block';
+
+  // Snapshot column
+  document.getElementById('snap-expPct').textContent    = (s.expectedPct * 100).toFixed(1) + '%';
+  document.getElementById('snap-incCos').textContent    = (s.incCoS * 100).toFixed(1) + '%';
+  document.getElementById('snap-totalCost').textContent = fmtDollars(s.totalCost);
+
+  // Current column
+  document.getElementById('curr-expPct').textContent    = (curr.expectedPct * 100).toFixed(1) + '%';
+  document.getElementById('curr-incCos').textContent    = (curr.incCoS * 100).toFixed(1) + '%';
+  document.getElementById('curr-totalCost').textContent = fmtDollars(curr.totalCost);
+
+  // Delta column — red = more expensive (worse), teal = cheaper (better)
+  function deltaEl(id, val, fmt, higherIsBad = true) {
+    const el  = document.getElementById(id);
+    el.textContent = (val >= 0 ? '+' : '') + fmt(val);
+    el.style.color = (val > 0) === higherIsBad ? 'var(--sg-darkred)' : 'var(--sg-teal)';
+    el.style.fontWeight = '700';
+  }
+
+  deltaEl('delta-expPct',    (curr.expectedPct - s.expectedPct) * 100,
+          v => v.toFixed(1) + 'pp');
+  deltaEl('delta-incCos',    (curr.incCoS - s.incCoS) * 100,
+          v => v.toFixed(1) + 'pp');
+  deltaEl('delta-totalCost', curr.totalCost - s.totalCost,
+          v => fmtDollars(Math.abs(v)));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN UPDATE
+// ═══════════════════════════════════════════════════════════════
+function update() {
+  renderKPIs();
+  updateChart();
+  if (snapshot) renderSnapshot();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initChart();
+  renderKPIs();
+});
+</script>
+</body>
+</html>
