@@ -119,6 +119,88 @@ body {
   height: 100% !important;
 }
 
+/* ── Tooltips ── */
+.tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.tip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--sg-grey);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  cursor: default;
+  margin-left: 5px;
+  flex-shrink: 0;
+  line-height: 1;
+  user-select: none;
+}
+.tip-box {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  width: 220px;
+  background: var(--sg-navy);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 8px 11px;
+  border-radius: 5px;
+  z-index: 500;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.22);
+}
+.tip-box::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 12px;
+  border-width: 0 5px 5px;
+  border-style: solid;
+  border-color: transparent transparent var(--sg-navy);
+}
+/* flip upward for bottom items */
+.tip-wrap.tip-up .tip-box {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+.tip-wrap.tip-up .tip-box::before {
+  top: auto;
+  bottom: -5px;
+  border-width: 5px 5px 0;
+  border-color: var(--sg-navy) transparent transparent;
+}
+.tip-wrap:hover .tip-box { display: block; }
+
+/* KPI tooltip wraps */
+.kpi-lbl-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.kpi-lbl-wrap .tip-box { left: 50%; transform: translateX(-50%); }
+.kpi-lbl-wrap .tip-box::before { left: 50%; transform: translateX(-50%); }
+
+/* team-bar tooltip — opens downward */
+.team-label-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.team-label-wrap .tip-box { top: calc(100% + 6px); left: 0; }
+
 /* ── Section labels ── */
 .section-label {
   font-size: 10px;
@@ -152,6 +234,8 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--sg-darkblue);
+  display: inline-flex;
+  align-items: center;
 }
 
 
@@ -505,28 +589,40 @@ body {
   <!-- ── Team Bar ── -->
   <div class="team-bar">
     <div class="team-field">
-      <label class="team-label">Headcount</label>
+      <div class="team-label-wrap">
+        <span class="team-label">Headcount</span>
+        <span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total number of sales reps in this role. Used to calculate total incentive cost and team productivity.</span></span>
+      </div>
       <div class="team-input-row">
         <input type="range" class="param-slider" id="sl-hc" min="1" max="500" step="1" value="50" oninput="syncSlider('hc',this.value)">
         <input type="number" class="param-num" id="num-hc" min="1" max="500" step="1" value="50" oninput="syncNum('hc',this.value)">
       </div>
     </div>
     <div class="team-field">
-      <label class="team-label">Total Target Comp ($000s)</label>
+      <div class="team-label-wrap">
+        <span class="team-label">Total Target Comp ($000s)</span>
+        <span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">Total Target Compensation (TTC) per rep — base salary plus target incentive. Enter in thousands (e.g. 200 = $200,000).</span></span>
+      </div>
       <div class="team-input-row">
         <input type="range" class="param-slider" id="sl-ttc" min="50" max="500" step="5" value="200" oninput="syncSlider('ttc',this.value)">
         <input type="number" class="param-num" id="num-ttc" min="50" max="500" step="5" value="200" oninput="syncNum('ttc',this.value)">
       </div>
     </div>
     <div class="team-field">
-      <label class="team-label">Pay Mix (TI % of TTC)</label>
+      <div class="team-label-wrap">
+        <span class="team-label">Pay Mix (TI % of TTC)</span>
+        <span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The portion of TTC paid as incentive. A 25% pay mix on $200K TTC means $50K target incentive and $150K base salary.</span></span>
+      </div>
       <div class="team-input-row">
         <input type="range" class="param-slider" id="sl-payMix" min="5" max="60" step="5" value="25" oninput="syncSlider('payMix',this.value)">
         <input type="number" class="param-num" id="num-payMix" min="5" max="60" step="5" value="25" oninput="syncNum('payMix',this.value)">
       </div>
     </div>
     <div class="team-field">
-      <label class="team-label">Avg Annual Quota per Rep ($M)</label>
+      <div class="team-label-wrap">
+        <span class="team-label">Avg Annual Quota per Rep ($M)</span>
+        <span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The average annual revenue quota assigned to each rep. Used to estimate total revenue generated and Incentive Cost of Sales.</span></span>
+      </div>
       <div class="team-input-row">
         <input type="range" class="param-slider" id="sl-avgQuota" min="0.1" max="10.0" step="0.1" value="1.5" oninput="syncSlider('avgQuota',this.value)">
         <input type="number" class="param-num" id="num-avgQuota" min="0.1" max="10.0" step="0.1" value="1.5" oninput="syncNum('avgQuota',this.value)">
@@ -544,7 +640,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">Threshold %</span>
+          <span class="tip-wrap param-label">Threshold %<i class="tip-icon">i</i><span class="tip-box">The quota attainment level where payouts begin. Reps who perform below this level earn no incentive for this measure.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-threshold" min="0" max="100" step="1" value="50" oninput="syncSlider('threshold',this.value)">
@@ -554,7 +650,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">Excellence %</span>
+          <span class="tip-wrap param-label">Excellence %<i class="tip-icon">i</i><span class="tip-box">The expected performance level of the 90th percentile for this role. Reps who reach Excellence earn the maximum accelerated payout rate.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-excellence" min="100" max="200" step="1" value="150" oninput="syncSlider('excellence',this.value)">
@@ -564,7 +660,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">TI Multiple at Excellence (Leverage)</span>
+          <span class="tip-wrap param-label">TI Multiple at Excellence (Leverage)<i class="tip-icon">i</i><span class="tip-box">How many times their Target Incentive a rep earns at Excellence. A leverage of 2.5x means a rep earns 250% of their TI when they hit Excellence attainment.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-leverage" min="1.0" max="5.0" step="0.1" value="2.5" oninput="syncSlider('leverage',this.value)">
@@ -574,7 +670,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">Post-Excellence Rate (Slope)</span>
+          <span class="tip-wrap param-label">Post-Excellence Rate (Slope)<i class="tip-icon">i</i><span class="tip-box tip-up">The payout rate earned per 1% of quota above Excellence. A slope of 1.0 continues the same rate; lower values taper payouts for overachievers.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-finalSlope" min="0" max="5" step="0.1" value="1.0" oninput="syncSlider('finalSlope',this.value)">
@@ -586,7 +682,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">Avg Quota Attainment %</span>
+          <span class="tip-wrap param-label">Avg Quota Attainment %<i class="tip-icon">i</i><span class="tip-box tip-up">The average quota attainment across all reps — 100% means the team hits quota on average. This shifts the entire performance distribution left or right.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-avgQA" min="50" max="150" step="1" value="100" oninput="syncSlider('avgQA',this.value)">
@@ -596,7 +692,7 @@ body {
 
       <div class="param-row">
         <div class="param-label-row">
-          <span class="param-label">Performance Std Dev %</span>
+          <span class="tip-wrap param-label">Performance Std Dev %<i class="tip-icon">i</i><span class="tip-box tip-up">How spread out your team's quota attainment is. A higher number means more reps at the extremes — both overachievers and underperformers. Typical range: 20–35%.</span></span>
         </div>
         <div class="param-input-row">
           <input type="range" class="param-slider" id="sl-perfSD" min="5" max="50" step="1" value="25" oninput="syncSlider('perfSD',this.value)">
@@ -629,19 +725,19 @@ body {
   <div class="kpi-row">
     <div class="kpi-card" id="card-cost">
       <div class="kpi-val" id="kpi-expectedPct">—</div>
-      <div class="kpi-lbl">Expected Plan Cost</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Expected Plan Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The expected incentive payout as a % of your total target incentive pool, accounting for actual performance distribution. Above 100% means the plan will cost more than budgeted.</span></span></span></div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-teal);">
       <div class="kpi-val" id="kpi-incCos">—</div>
-      <div class="kpi-lbl">Incentive CoS %</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Incentive CoS %<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">Incentive Cost of Sales — your expected incentive spend as a percentage of the revenue your team is projected to generate. A lower number means more efficient selling.</span></span></span></div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-darkblue);">
       <div class="kpi-val" id="kpi-totalCost">—</div>
-      <div class="kpi-lbl">Total Incentive Cost</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Incentive Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total expected incentive dollars paid out across all reps, based on the plan design and assumed performance distribution.</span></span></span></div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-grey);">
       <div class="kpi-val" id="kpi-totalProd">—</div>
-      <div class="kpi-lbl">Total Productivity</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Productivity<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total revenue your team is expected to generate — quota × average attainment × headcount. The denominator behind Incentive CoS %.</span></span></span></div>
     </div>
   </div>
 
