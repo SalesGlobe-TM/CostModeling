@@ -119,6 +119,26 @@ body {
   height: 100% !important;
 }
 
+/* ── In-chart control buttons ── */
+.chart-controls {
+  position: absolute;
+  top: 68px;
+  left: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 10;
+}
+.chart-controls .btn-reset,
+.chart-controls .btn-snap,
+.chart-controls .btn-clear-snap {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  min-width: 80px;
+  text-align: center;
+}
+
 /* ── Tooltips ── */
 .tip-wrap {
   position: relative;
@@ -306,6 +326,24 @@ body {
   letter-spacing: 0.04em;
 }
 
+.kpi-snap-row {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #eee;
+  font-size: 11px;
+  color: var(--sg-grey);
+  gap: 6px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.kpi-snap-row.visible { display: flex; }
+.kpi-snap-was { color: var(--sg-grey); }
+.kpi-snap-delta {
+  font-weight: 700;
+  font-size: 12px;
+}
+
 /* ── CTA Banner ── */
 .cta-banner {
   background: var(--sg-navy);
@@ -437,7 +475,7 @@ body {
 
 /* ── Snapshot controls ── */
 .snap-controls { display:flex; align-items:center; gap:10px; padding:10px 0 4px; }
-.btn-reset { background:transparent; color:var(--sg-grey); border:1px solid var(--sg-grey); border-radius:20px; padding:6px 14px; font-family:'Calibri',sans-serif; font-size:12px; cursor:pointer; }
+.btn-reset { background:#fff; color:var(--sg-grey); border:1px solid var(--sg-grey); border-radius:20px; padding:6px 14px; font-family:'Calibri',sans-serif; font-size:12px; cursor:pointer; }
 .btn-reset:hover { color:var(--sg-darkblue); border-color:var(--sg-darkblue); }
 .btn-snap { background:var(--sg-navy); color:white; border:none; border-radius:20px; padding:7px 16px; font-family:'Calibri',sans-serif; font-size:13px; font-weight:700; cursor:pointer; }
 .btn-snap:hover { background:var(--sg-darkblue); }
@@ -700,79 +738,60 @@ body {
         </div>
       </div>
 
-      <div style="padding: 10px 0 4px;">
+      <div style="padding: 10px 0 4px; display:flex; gap:8px;">
         <button class="btn-add" onclick="showUpgradeModal('measure')">+ Add Measure</button>
+        <button class="btn-add" onclick="showUpgradeModal('role')">+ Add Role</button>
       </div>
 
     </div><!-- /left-col -->
 
     <!-- RIGHT: Chart -->
     <div class="right-col">
+      <div class="chart-controls">
+        <button class="btn-reset" onclick="resetModel()">↺ Reset</button>
+        <button id="btn-snap" class="btn-snap" onclick="freezeSnapshot()">📸 Snapshot</button>
+        <button id="btn-clear-snap" class="btn-clear-snap" onclick="clearSnapshot()" style="display:none;">✕ Clear</button>
+      </div>
       <canvas id="mainChart"></canvas>
     </div>
 
   </div><!-- /main-panel -->
 
-  <!-- ── Snapshot Controls ── -->
-  <div class="snap-controls">
-    <button class="btn-reset" onclick="resetModel()">↺ Reset</button>
-    <button id="btn-snap" class="btn-snap" onclick="freezeSnapshot()">📸 Snapshot</button>
-    <button class="btn-add" onclick="showUpgradeModal('role')">+ Add Role</button>
-    <button id="btn-clear-snap" class="btn-clear-snap" onclick="clearSnapshot()" style="display:none;">✕ Clear Snapshot</button>
-  </div>
 
   <!-- ── KPI Cards ── -->
   <div class="kpi-row">
     <div class="kpi-card" id="card-cost">
       <div class="kpi-val" id="kpi-expectedPct">—</div>
       <div class="kpi-lbl"><span class="kpi-lbl-wrap">Expected Plan Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The expected incentive payout as a % of your total target incentive pool, accounting for actual performance distribution. Above 100% means the plan will cost more than budgeted.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-expPct">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-expPct">—</span></span>
+        <span class="kpi-snap-delta" id="delta-expPct"></span>
+      </div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-teal);">
       <div class="kpi-val" id="kpi-incCos">—</div>
       <div class="kpi-lbl"><span class="kpi-lbl-wrap">Incentive CoS %<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">Incentive Cost of Sales — your expected incentive spend as a percentage of the revenue your team is projected to generate. A lower number means more efficient selling.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-incCos">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-incCos">—</span></span>
+        <span class="kpi-snap-delta" id="delta-incCos"></span>
+      </div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-darkblue);">
       <div class="kpi-val" id="kpi-totalCost">—</div>
       <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Incentive Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total expected incentive dollars paid out across all reps, based on the plan design and assumed performance distribution.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-totalCost">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-totalCost">—</span></span>
+        <span class="kpi-snap-delta" id="delta-totalCost"></span>
+      </div>
     </div>
     <div class="kpi-card" style="border-top-color: var(--sg-grey);">
       <div class="kpi-val" id="kpi-totalProd">—</div>
       <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Productivity<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total revenue your team is expected to generate — quota × average attainment × headcount. The denominator behind Incentive CoS %.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-totalProd">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-totalProd">—</span></span>
+        <span class="kpi-snap-delta" id="delta-totalProd"></span>
+      </div>
     </div>
-  </div>
-
-  <!-- ── Snapshot Comparison Table ── -->
-  <div id="snap-compare" style="display:none; margin:12px 0;">
-    <table class="snap-table">
-      <thead>
-        <tr>
-          <th></th>
-          <th>Snapshot</th>
-          <th>Current</th>
-          <th>Change</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Expected Plan Cost</td>
-          <td id="snap-expPct">—</td>
-          <td id="curr-expPct">—</td>
-          <td id="delta-expPct">—</td>
-        </tr>
-        <tr>
-          <td>Incremental CoS %</td>
-          <td id="snap-incCos">—</td>
-          <td id="curr-incCos">—</td>
-          <td id="delta-incCos">—</td>
-        </tr>
-        <tr>
-          <td>Total Inc Cost</td>
-          <td id="snap-totalCost">—</td>
-          <td id="curr-totalCost">—</td>
-          <td id="delta-totalCost">—</td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 
   <!-- ── CTA Banner ── -->
@@ -873,6 +892,15 @@ function buildPayCurveData() {
     points.push({ x: i, y: Math.round(payout * 10) / 10 });
   }
   return points;
+}
+
+function buildExcellenceLines() {
+  const excX  = state.excellence;           // x = quota attainment %
+  const excY  = state.leverage * 100;       // y = payout % of TI
+  return {
+    horiz: [{ x: 0, y: excY },  { x: excX, y: excY }],
+    vert:  [{ x: excX, y: 0 },  { x: excX, y: excY }],
+  };
 }
 
 function buildDistData() {
@@ -994,6 +1022,62 @@ function initChart() {
           order: 4,
           hidden: true,
         },
+        // [4] Goal horizontal — static at (0,100)→(100,100)
+        {
+          label: '__goalH',
+          data: [{ x: 0, y: 100 }, { x: 100, y: 100 }],
+          type: 'line',
+          borderColor: 'rgba(160,160,160,0.50)',
+          borderWidth: 0.8,
+          borderDash: [2, 2],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          yAxisID: 'y',
+          order: 10,
+        },
+        // [5] Goal vertical — static at (100,0)→(100,100)
+        {
+          label: '__goalV',
+          data: [{ x: 100, y: 0 }, { x: 100, y: 100 }],
+          type: 'line',
+          borderColor: 'rgba(160,160,160,0.50)',
+          borderWidth: 0.8,
+          borderDash: [2, 2],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          yAxisID: 'y',
+          order: 10,
+        },
+        // [6] Excellence horizontal — dynamic
+        {
+          label: '__excH',
+          data: buildExcellenceLines().horiz,
+          type: 'line',
+          borderColor: 'rgba(140,140,140,0.50)',
+          borderWidth: 0.8,
+          borderDash: [2, 2],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          yAxisID: 'y',
+          order: 10,
+        },
+        // [7] Excellence vertical — dynamic
+        {
+          label: '__excV',
+          data: buildExcellenceLines().vert,
+          type: 'line',
+          borderColor: 'rgba(140,140,140,0.50)',
+          borderWidth: 0.8,
+          borderDash: [2, 2],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+          yAxisID: 'y',
+          order: 10,
+        },
       ]
     },
     options: {
@@ -1009,6 +1093,7 @@ function initChart() {
             font: { family: 'Calibri', size: 12 },
             boxWidth: 20,
             padding: 12,
+            filter: item => !item.text.startsWith('__'),
           }
         },
         tooltip: { enabled: false },
@@ -1021,7 +1106,8 @@ function initChart() {
           max: 200,
           title: { display: true, text: 'Quota Attainment %', font: { family: 'Calibri', size: 12 } },
           ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
+          grid: { display: false },
+          border: { display: true, color: 'rgba(0,0,0,0.15)' },
         },
         y: {
           type: 'linear',
@@ -1030,7 +1116,8 @@ function initChart() {
           position: 'left',
           title: { display: true, text: 'Payout % of TI', font: { family: 'Calibri', size: 12 } },
           ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%' },
-          grid: { color: 'rgba(0,0,0,0.06)' },
+          grid: { display: false },
+          border: { display: true, color: 'rgba(0,0,0,0.15)' },
         },
         y2: {
           type: 'linear',
@@ -1049,6 +1136,10 @@ function updateChart() {
   if (!chart) return;
   chart.data.datasets[0].data = buildPayCurveData();
   chart.data.datasets[1].data = buildDistData();
+  // Update dynamic Excellence crosshair (datasets 6 & 7)
+  const exc = buildExcellenceLines();
+  chart.data.datasets[6].data = exc.horiz;
+  chart.data.datasets[7].data = exc.vert;
   chart.update('none');
 }
 
@@ -1150,9 +1241,11 @@ function triggerFlash() {
 }
 
 function freezeSnapshot() {
+  const results = compute();
+  results.state = { ...state };
   snapshot = {
     state:     { ...state },
-    results:   compute(),
+    results,
     curveData: buildPayCurveData(),
     distData:  buildDistData(),
   };
@@ -1169,8 +1262,10 @@ function freezeSnapshot() {
 
 function clearSnapshot() {
   snapshot = null;
-  document.getElementById('snap-compare').style.display = 'none';
   document.getElementById('btn-clear-snap').style.display = 'none';
+  ['expPct','incCos','totalCost','totalProd'].forEach(k => {
+    document.getElementById('snap-row-' + k).classList.remove('visible');
+  });
   chart.data.datasets[2].data   = [];
   chart.data.datasets[2].hidden = true;
   chart.data.datasets[3].data   = [];
@@ -1182,32 +1277,39 @@ function renderSnapshot() {
   if (!snapshot) return;
   const curr = compute();
   const s    = snapshot.results;
-  document.getElementById('snap-compare').style.display = 'block';
 
-  // Snapshot column
-  document.getElementById('snap-expPct').textContent    = (s.expectedPct * 100).toFixed(1) + '%';
+  // Show snapshot rows on each card
+  ['expPct','incCos','totalCost','totalProd'].forEach(k => {
+    document.getElementById('snap-row-' + k).classList.add('visible');
+  });
+
+  // Snapshot values
+  document.getElementById('snap-expPct').textContent    = (s.expectedPct * 100).toFixed(1) + '% of TI';
   document.getElementById('snap-incCos').textContent    = (s.incCoS * 100).toFixed(1) + '%';
   document.getElementById('snap-totalCost').textContent = fmtDollars(s.totalCost);
-
-  // Current column
-  document.getElementById('curr-expPct').textContent    = (curr.expectedPct * 100).toFixed(1) + '%';
-  document.getElementById('curr-incCos').textContent    = (curr.incCoS * 100).toFixed(1) + '%';
-  document.getElementById('curr-totalCost').textContent = fmtDollars(curr.totalCost);
-
-  // Delta column — red = more expensive (worse), teal = cheaper (better)
-  function deltaEl(id, val, fmt, higherIsBad = true) {
-    const el  = document.getElementById(id);
-    el.textContent = (val >= 0 ? '+' : '') + fmt(val);
-    el.style.color = (val > 0) === higherIsBad ? 'var(--sg-darkred)' : 'var(--sg-teal)';
-    el.style.fontWeight = '700';
+  const snapProd = s.state
+    ? (s.state.avgQuota * (s.state.avgQA / 100) * s.state.headcount)
+    : null;
+  if (snapProd !== null) {
+    document.getElementById('snap-totalProd').textContent =
+      snapProd >= 1000 ? '$' + (snapProd/1000).toFixed(1) + 'B' : '$' + snapProd.toFixed(1) + 'M';
   }
 
-  deltaEl('delta-expPct',    (curr.expectedPct - s.expectedPct) * 100,
-          v => v.toFixed(1) + 'pp');
-  deltaEl('delta-incCos',    (curr.incCoS - s.incCoS) * 100,
-          v => v.toFixed(1) + 'pp');
-  deltaEl('delta-totalCost', curr.totalCost - s.totalCost,
-          v => fmtDollars(Math.abs(v)));
+  // Delta chips
+  function setDelta(id, val, fmt, higherIsBad = true) {
+    const el = document.getElementById(id);
+    if (val === null) { el.textContent = ''; return; }
+    el.textContent = (val >= 0 ? '▲ +' : '▼ ') + fmt(val);
+    el.style.color = (val > 0) === higherIsBad ? 'var(--sg-darkred)' : 'var(--sg-teal)';
+  }
+
+  setDelta('delta-expPct',    (curr.expectedPct - s.expectedPct) * 100, v => Math.abs(v).toFixed(1) + 'pp');
+  setDelta('delta-incCos',    (curr.incCoS - s.incCoS) * 100,           v => Math.abs(v).toFixed(1) + 'pp');
+  setDelta('delta-totalCost', curr.totalCost - s.totalCost,             v => fmtDollars(Math.abs(v)));
+
+  const currProd = state.avgQuota * (state.avgQA / 100) * state.headcount;
+  setDelta('delta-totalProd', snapProd !== null ? currProd - snapProd : null,
+    v => v >= 1000 ? '$' + (v/1000).toFixed(1) + 'B' : '$' + Math.abs(v).toFixed(1) + 'M', false);
 }
 
 // ═══════════════════════════════════════════════════════════════
