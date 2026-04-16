@@ -292,19 +292,20 @@ body {
 /* ── KPI Cards ── */
 .kpi-row {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-top: 14px;
 }
 
 .kpi-card {
-  flex: 1;
+  flex: 1 1 calc(33% - 10px);
+  min-width: 150px;
   background: var(--sg-white);
   border: 1.5px solid #ddd;
   border-top: 4px solid var(--sg-blue);
   border-radius: 6px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  min-width: 0;
 }
 
 .kpi-card.cost-green  { border-top-color: #27AE60; }
@@ -312,10 +313,10 @@ body {
 .kpi-card.cost-red    { border-top-color: var(--sg-red); }
 
 .kpi-val {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--sg-darkblue);
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
 .kpi-lbl {
@@ -762,7 +763,7 @@ body {
   <div class="kpi-row">
     <div class="kpi-card" id="card-cost">
       <div class="kpi-val" id="kpi-expectedPct">—</div>
-      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Expected Plan Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The expected incentive payout as a % of your total target incentive pool, accounting for actual performance distribution. Above 100% means the plan will cost more than budgeted.</span></span></span></div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Expected Plan Cost<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The expected incentive payout as a % of your total target incentive pool, accounting for actual performance distribution. Above 100% means your plan will cost more than the sum of all Target Incentives.</span></span></span></div>
       <div class="kpi-snap-row" id="snap-row-expPct">
         <span class="kpi-snap-was">Snapshot: <span id="snap-expPct">—</span></span>
         <span class="kpi-snap-delta" id="delta-expPct"></span>
@@ -784,9 +785,25 @@ body {
         <span class="kpi-snap-delta" id="delta-totalCost"></span>
       </div>
     </div>
+    <div class="kpi-card" style="border-top-color: var(--sg-teal);">
+      <div class="kpi-val" id="kpi-costPerRep">—</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Expected Cost Per Rep (% of TTC)<span class="tip-wrap tip-up"><i class="tip-icon">i</i><span class="tip-box">Expected total comp per rep as a % of their TTC — base salary % plus the incentive portion scaled by expected payout. Above 100% means average reps are expected to earn more than their TTC.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-costPerRep">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-costPerRep">—</span></span>
+        <span class="kpi-snap-delta" id="delta-costPerRep"></span>
+      </div>
+    </div>
+    <div class="kpi-card" style="border-top-color: var(--sg-navy);">
+      <div class="kpi-val" id="kpi-ccCos">—</div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Comp Cost of Sales (CCoS)<span class="tip-wrap tip-up"><i class="tip-icon">i</i><span class="tip-box">Total compensation cost (base salary + expected incentive payout) as a percentage of the revenue your team is projected to generate. Reflects your full people cost to drive revenue.</span></span></span></div>
+      <div class="kpi-snap-row" id="snap-row-ccCos">
+        <span class="kpi-snap-was">Snapshot: <span id="snap-ccCos">—</span></span>
+        <span class="kpi-snap-delta" id="delta-ccCos"></span>
+      </div>
+    </div>
     <div class="kpi-card" style="border-top-color: var(--sg-grey);">
       <div class="kpi-val" id="kpi-totalProd">—</div>
-      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Productivity<span class="tip-wrap"><i class="tip-icon">i</i><span class="tip-box">The total revenue your team is expected to generate — quota × average attainment × headcount. The denominator behind Incentive CoS %.</span></span></span></div>
+      <div class="kpi-lbl"><span class="kpi-lbl-wrap">Total Productivity<span class="tip-wrap tip-up"><i class="tip-icon">i</i><span class="tip-box">The total revenue your team is expected to generate — quota × average attainment × headcount. The denominator behind Incentive CoS %.</span></span></span></div>
       <div class="kpi-snap-row" id="snap-row-totalProd">
         <span class="kpi-snap-was">Snapshot: <span id="snap-totalProd">—</span></span>
         <span class="kpi-snap-delta" id="delta-totalProd"></span>
@@ -937,7 +954,14 @@ function compute() {
   const totalExpectedRevenue = state.avgQuota * state.headcount * (state.avgQA / 100) * 1000; // $M → $000s
   const incCoS = totalCost / totalExpectedRevenue;
 
-  return { expectedPct, totalCost, totalTI, incCoS };
+  // CCoS: total comp cost (base + incentives) as % of expected revenue
+  const totalBase = state.ttc * (1 - state.payMix / 100) * state.headcount; // $000s
+  const ccCos = (totalBase + totalCost) / totalExpectedRevenue;
+
+  // Cost Per Rep as % of TTC: base% + (payMix% × expectedPct)
+  const costPerRepPct = (1 - state.payMix / 100 + (state.payMix / 100) * expectedPct) * 100;
+
+  return { expectedPct, totalCost, totalTI, incCoS, ccCos, costPerRepPct };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1114,18 +1138,19 @@ function initChart() {
           min: 0,
           max: 300,
           position: 'left',
-          title: { display: true, text: 'Payout % of TI', font: { family: 'Calibri', size: 12 } },
-          ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%' },
+          title: { display: true, text: 'Payout % of TI', font: { family: 'Calibri', size: 12 }, color: '#205D92' },
+          ticks: { font: { family: 'Calibri', size: 11 }, callback: v => v + '%', color: '#205D92' },
           grid: { display: false },
-          border: { display: true, color: 'rgba(0,0,0,0.15)' },
+          border: { display: true, color: 'rgba(32,93,146,0.25)' },
         },
         y2: {
           type: 'linear',
           min: 0,
           position: 'right',
-          title: { display: true, text: 'Distribution Density', font: { family: 'Calibri', size: 11 } },
-          ticks: { font: { family: 'Calibri', size: 10 } },
+          title: { display: true, text: 'Distribution Density', font: { family: 'Calibri', size: 11 }, color: '#C0392B' },
+          ticks: { font: { family: 'Calibri', size: 10 }, color: '#C0392B' },
           grid: { drawOnChartArea: false },
+          border: { display: true, color: 'rgba(192,57,43,0.25)' },
         }
       }
     }
@@ -1147,7 +1172,7 @@ function updateChart() {
 // RENDER KPI CARDS
 // ═══════════════════════════════════════════════════════════════
 function renderKPIs() {
-  const { expectedPct, totalCost, incCoS } = compute();
+  const { expectedPct, totalCost, incCoS, ccCos, costPerRepPct } = compute();
 
   // Expected Plan Cost card + traffic-light color
   const pctVal = expectedPct * 100;
@@ -1158,7 +1183,7 @@ function renderKPIs() {
   else if (pctVal <= 120) card.classList.add('cost-yellow');
   else                   card.classList.add('cost-red');
 
-  // Incremental CoS
+  // Incentive CoS
   document.getElementById('kpi-incCos').textContent = (incCoS * 100).toFixed(1) + '%';
 
   // Total $ Cost
@@ -1170,6 +1195,12 @@ function renderKPIs() {
     ? '$' + (totalProd / 1000).toFixed(1) + 'B'
     : '$' + totalProd.toFixed(1) + 'M';
   document.getElementById('kpi-totalProd').textContent = prodVal;
+
+  // CCoS
+  document.getElementById('kpi-ccCos').textContent = (ccCos * 100).toFixed(1) + '%';
+
+  // Expected Cost Per Rep as % of TTC
+  document.getElementById('kpi-costPerRep').textContent = costPerRepPct.toFixed(1) + '% of TTC';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1263,7 +1294,7 @@ function freezeSnapshot() {
 function clearSnapshot() {
   snapshot = null;
   document.getElementById('btn-clear-snap').style.display = 'none';
-  ['expPct','incCos','totalCost','totalProd'].forEach(k => {
+  ['expPct','incCos','totalCost','totalProd','ccCos','costPerRep'].forEach(k => {
     document.getElementById('snap-row-' + k).classList.remove('visible');
   });
   chart.data.datasets[2].data   = [];
@@ -1279,7 +1310,7 @@ function renderSnapshot() {
   const s    = snapshot.results;
 
   // Show snapshot rows on each card
-  ['expPct','incCos','totalCost','totalProd'].forEach(k => {
+  ['expPct','incCos','totalCost','totalProd','ccCos','costPerRep'].forEach(k => {
     document.getElementById('snap-row-' + k).classList.add('visible');
   });
 
@@ -1294,6 +1325,8 @@ function renderSnapshot() {
     document.getElementById('snap-totalProd').textContent =
       snapProd >= 1000 ? '$' + (snapProd/1000).toFixed(1) + 'B' : '$' + snapProd.toFixed(1) + 'M';
   }
+  document.getElementById('snap-ccCos').textContent      = (s.ccCos * 100).toFixed(1) + '%';
+  document.getElementById('snap-costPerRep').textContent = s.costPerRepPct.toFixed(1) + '% of TTC';
 
   // Delta chips
   function setDelta(id, val, fmt, higherIsBad = true) {
@@ -1303,9 +1336,11 @@ function renderSnapshot() {
     el.style.color = (val > 0) === higherIsBad ? 'var(--sg-darkred)' : 'var(--sg-teal)';
   }
 
-  setDelta('delta-expPct',    (curr.expectedPct - s.expectedPct) * 100, v => Math.abs(v).toFixed(1) + 'pp');
-  setDelta('delta-incCos',    (curr.incCoS - s.incCoS) * 100,           v => Math.abs(v).toFixed(1) + 'pp');
-  setDelta('delta-totalCost', curr.totalCost - s.totalCost,             v => fmtDollars(Math.abs(v)));
+  setDelta('delta-expPct',      (curr.expectedPct - s.expectedPct) * 100,  v => Math.abs(v).toFixed(1) + 'pp');
+  setDelta('delta-incCos',      (curr.incCoS - s.incCoS) * 100,            v => Math.abs(v).toFixed(1) + 'pp');
+  setDelta('delta-totalCost',   curr.totalCost - s.totalCost,              v => fmtDollars(Math.abs(v)));
+  setDelta('delta-ccCos',       (curr.ccCos - s.ccCos) * 100,              v => Math.abs(v).toFixed(1) + 'pp');
+  setDelta('delta-costPerRep',  curr.costPerRepPct - s.costPerRepPct,      v => Math.abs(v).toFixed(1) + 'pp');
 
   const currProd = state.avgQuota * (state.avgQA / 100) * state.headcount;
   setDelta('delta-totalProd', snapProd !== null ? currProd - snapProd : null,
